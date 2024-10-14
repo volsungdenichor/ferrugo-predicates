@@ -7,7 +7,7 @@
 using namespace ferrugo;
 using namespace std::string_view_literals;
 
-auto divisible_by(int divisor)
+constexpr auto divisible_by(int divisor)
 {
     return [=](int v) { return v % divisor == 0; };
 }
@@ -202,4 +202,62 @@ TEST_CASE("predicates - contains", "")
     REQUIRE_THAT(pred("#"sv), matchers::equal_to(true));
     REQUIRE_THAT(pred("##"sv), matchers::equal_to(true));
     REQUIRE_THAT(pred("__"sv), matchers::equal_to(false));
+}
+
+TEST_CASE("predicates - elements_are", "")
+{
+    const auto pred = predicates::elements_are(0, predicates::ge(3), predicates::le(5), 10);
+    REQUIRE_THAT(  //
+        (core::str(pred)),
+        matchers::equal_to("(elements_are 0 (ge 3) (le 5) 10)"sv));
+    REQUIRE_THAT(pred(std::vector{ 0, 3, 5, 10 }), matchers::equal_to(true));
+    REQUIRE_THAT(pred(std::vector{ 0, 4, 4, 10 }), matchers::equal_to(true));
+    REQUIRE_THAT(pred(std::vector{ 0, 3, 5, 10, 100 }), matchers::equal_to(false));
+    REQUIRE_THAT(pred(std::vector{ 0, 3, 5 }), matchers::equal_to(false));
+}
+
+TEST_CASE("predicates - result_of", "")
+{
+    const auto pred = predicates::result_of([](const std::string& v) { return v.size(); }, predicates::le(3));
+    REQUIRE_THAT(  //
+        (core::str(pred)),
+        matchers::equal_to("(result_of 1 (le 3))"sv));
+    REQUIRE_THAT(pred(std::string{ "abc" }), matchers::equal_to(true));
+    REQUIRE_THAT(pred(std::string{ "ab" }), matchers::equal_to(true));
+    REQUIRE_THAT(pred(std::string{ "abcd" }), matchers::equal_to(false));
+}
+
+TEST_CASE("predicates - field", "")
+{
+    struct test_t
+    {
+        int field;
+    };
+    const auto pred = predicates::field(&test_t::field, predicates::le(3));
+    REQUIRE_THAT(  //
+        (core::str(pred)),
+        matchers::equal_to("(field 1 (le 3))"sv));
+    REQUIRE_THAT(pred(test_t{ 3 }), matchers::equal_to(true));
+    REQUIRE_THAT(pred(test_t{ 2 }), matchers::equal_to(true));
+    REQUIRE_THAT(pred(test_t{ 12 }), matchers::equal_to(false));
+}
+
+TEST_CASE("predicates - property", "")
+{
+    struct test_t
+    {
+        int m_field;
+
+        int field() const
+        {
+            return m_field;
+        }
+    };
+    const auto pred = predicates::property(&test_t::field, predicates::le(3));
+    REQUIRE_THAT(  //
+        (core::str(pred)),
+        matchers::equal_to("(property 1 (le 3))"sv));
+    REQUIRE_THAT(pred(test_t{ 3 }), matchers::equal_to(true));
+    REQUIRE_THAT(pred(test_t{ 2 }), matchers::equal_to(true));
+    REQUIRE_THAT(pred(test_t{ 12 }), matchers::equal_to(false));
 }

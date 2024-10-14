@@ -254,6 +254,80 @@ struct contains_fn
     }
 };
 
+struct elements_are_fn
+{
+    template <class... Preds>
+    struct impl
+    {
+        std::tuple<Preds...> m_preds;
+
+        template <class U>
+        bool operator()(U&& item) const
+        {
+            return call<0>(std::begin(item), std::end(item));
+        }
+
+        template <std::size_t N, class Iter>
+        bool call(Iter begin, Iter end) const
+        {
+            if constexpr (N == sizeof...(Preds))
+            {
+                return begin == end;
+            }
+            else
+            {
+                return begin != end && invoke_pred(std::get<N>(m_preds), *begin) && call<N + 1>(std::next(begin), end);
+            }
+        }
+
+        friend std::ostream& operator<<(std::ostream& os, const impl& item)
+        {
+            os << "("
+               << "elements_are";
+            std::apply(
+                [&](const auto&... preds) { ((os << " " << ::ferrugo::core::safe_format(preds)), ...); }, item.m_preds);
+            os << ")";
+            return os;
+        }
+    };
+
+    template <class... Preds>
+    auto operator()(Preds&&... preds) const -> impl<std::decay_t<Preds>...>
+    {
+        return impl<std::decay_t<Preds>...>{ { std::forward<Preds>(preds)... } };
+    }
+};
+
+template <class Name>
+struct result_of_fn
+{
+    template <class Func, class Pred>
+    struct impl
+    {
+        Func m_func;
+        Pred m_pred;
+
+        template <class U>
+        bool operator()(U&& item) const
+        {
+            return invoke_pred(m_pred, std::invoke(m_func, std::forward<U>(item)));
+        }
+
+        friend std::ostream& operator<<(std::ostream& os, const impl& item)
+        {
+            static const auto name = Name{};
+            return os << "(" << name << " " << ::ferrugo::core::safe_format(item.m_func) << " "
+                      << ::ferrugo::core::safe_format(item.m_pred) << ")";
+        }
+    };
+
+    template <class Func, class Pred>
+    auto operator()(Func&& func, Pred&& pred) const -> impl<std::decay_t<Func>, std::decay_t<Pred>>
+    {
+        return { std::forward<Func>(func), std::forward<Pred>(pred) };
+    }
+};
+
 }  // namespace detail
 
 static constexpr inline auto any = detail::compound_fn<detail::any_tag, static_string<'a', 'n', 'y'>>{};
@@ -264,6 +338,7 @@ static constexpr inline auto each = detail::each_fn{};
 static constexpr inline auto contains = detail::contains_fn{};
 static constexpr inline auto size_is = detail::size_is_fn{};
 static constexpr inline auto is_empty = detail::is_empty_fn{};
+static constexpr inline auto elements_are = detail::elements_are_fn{};
 
 static constexpr inline auto eq = detail::compare_fn<std::equal_to<>, static_string<'e', 'q'>>{};
 static constexpr inline auto ne = detail::compare_fn<std::not_equal_to<>, static_string<'n', 'e'>>{};
@@ -271,6 +346,10 @@ static constexpr inline auto lt = detail::compare_fn<std::less<>, static_string<
 static constexpr inline auto gt = detail::compare_fn<std::greater<>, static_string<'g', 't'>>{};
 static constexpr inline auto le = detail::compare_fn<std::less_equal<>, static_string<'l', 'e'>>{};
 static constexpr inline auto ge = detail::compare_fn<std::greater_equal<>, static_string<'g', 'e'>>{};
+
+static constexpr inline auto result_of = detail::result_of_fn<static_string<'r', 'e', 's', 'u', 'l', 't', '_', 'o', 'f'>>{};
+static constexpr inline auto field = detail::result_of_fn<static_string<'f', 'i', 'e', 'l', 'd'>>{};
+static constexpr inline auto property = detail::result_of_fn<static_string<'p', 'r', 'o', 'p', 'e', 'r', 't', 'y'>>{};
 
 }  // namespace predicates
 }  // namespace ferrugo
