@@ -1,8 +1,8 @@
 #pragma once
 
 #include <ferrugo/core/ostream_utils.hpp>
-#include <ferrugo/core/static_string.hpp>
 #include <ferrugo/core/type_traits.hpp>
+#include <ferrugo/predicates/static_string.hpp>
 #include <functional>
 #include <variant>
 
@@ -256,8 +256,8 @@ struct contains_fn
 
 }  // namespace detail
 
-static constexpr inline auto any = detail::compound_fn<detail::any_tag, core::static_string<'a', 'n', 'y'>>{};
-static constexpr inline auto all = detail::compound_fn<detail::all_tag, core::static_string<'a', 'l', 'l'>>{};
+static constexpr inline auto any = detail::compound_fn<detail::any_tag, static_string<'a', 'n', 'y'>>{};
+static constexpr inline auto all = detail::compound_fn<detail::all_tag, static_string<'a', 'l', 'l'>>{};
 static constexpr inline auto negate = detail::negate_fn{};
 
 static constexpr inline auto each = detail::each_fn{};
@@ -265,12 +265,12 @@ static constexpr inline auto contains = detail::contains_fn{};
 static constexpr inline auto size_is = detail::size_is_fn{};
 static constexpr inline auto is_empty = detail::is_empty_fn{};
 
-static constexpr inline auto eq = detail::compare_fn<std::equal_to<>, core::static_string<'e', 'q'>>{};
-static constexpr inline auto ne = detail::compare_fn<std::not_equal_to<>, core::static_string<'n', 'e'>>{};
-static constexpr inline auto lt = detail::compare_fn<std::less<>, core::static_string<'l', 't'>>{};
-static constexpr inline auto gt = detail::compare_fn<std::greater<>, core::static_string<'g', 't'>>{};
-static constexpr inline auto le = detail::compare_fn<std::less_equal<>, core::static_string<'l', 'e'>>{};
-static constexpr inline auto ge = detail::compare_fn<std::greater_equal<>, core::static_string<'g', 'e'>>{};
+static constexpr inline auto eq = detail::compare_fn<std::equal_to<>, static_string<'e', 'q'>>{};
+static constexpr inline auto ne = detail::compare_fn<std::not_equal_to<>, static_string<'n', 'e'>>{};
+static constexpr inline auto lt = detail::compare_fn<std::less<>, static_string<'l', 't'>>{};
+static constexpr inline auto gt = detail::compare_fn<std::greater<>, static_string<'g', 't'>>{};
+static constexpr inline auto le = detail::compare_fn<std::less_equal<>, static_string<'l', 'e'>>{};
+static constexpr inline auto ge = detail::compare_fn<std::greater_equal<>, static_string<'g', 'e'>>{};
 
 }  // namespace predicates
 }  // namespace ferrugo
