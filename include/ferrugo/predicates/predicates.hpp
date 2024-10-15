@@ -431,6 +431,178 @@ struct starts_with_array_fn
     }
 };
 
+struct ends_with_elements_fn
+{
+    template <class... Preds>
+    struct impl
+    {
+        std::tuple<Preds...> m_preds;
+
+        template <class U>
+        bool operator()(U&& item) const
+        {
+            return call<0>(std::begin(item), std::end(item));
+        }
+
+        template <std::size_t N, class Iter>
+        bool call(Iter begin, Iter end) const
+        {
+            // if constexpr (N == sizeof...(Preds))
+            // {
+            //     return true;
+            // }
+            // else
+            // {
+            //     return begin != end && invoke_pred(std::get<N>(m_preds), *begin) && call<N + 1>(std::next(begin), end);
+            // }
+            return false;
+        }
+
+        friend std::ostream& operator<<(std::ostream& os, const impl& item)
+        {
+            os << "("
+               << "ends_with_elements";
+            std::apply(
+                [&](const auto&... preds) { ((os << " " << ::ferrugo::core::safe_format(preds)), ...); }, item.m_preds);
+            os << ")";
+            return os;
+        }
+    };
+
+    template <class... Preds>
+    auto operator()(Preds&&... preds) const -> impl<std::decay_t<Preds>...>
+    {
+        return impl<std::decay_t<Preds>...>{ { std::forward<Preds>(preds)... } };
+    }
+};
+
+struct ends_with_array_fn
+{
+    template <class Range>
+    struct impl
+    {
+        Range m_range;
+
+        template <class U>
+        bool operator()(U&& item) const
+        {
+            // auto p_b = std::begin(unwrap(m_range));
+            // auto p_e = std::end(unwrap(m_range));
+
+            // auto b = std::begin(item);
+            // auto e = std::end(item);
+
+            // for (; b != e && p_b != p_e; ++b, ++p_b)
+            // {
+            //     if (!invoke_pred(*p_b, *b))
+            //     {
+            //         return false;
+            //     }
+            // }
+            // return p_b == p_e;
+            return false;
+        }
+
+        friend std::ostream& operator<<(std::ostream& os, const impl& item)
+        {
+            return os << "("
+                      << "ends_with_array " << ::ferrugo::core::safe_format(item.m_range) << ")";
+        }
+    };
+
+    template <class Range>
+    auto operator()(Range range) const -> impl<Range>
+    {
+        return impl<Range>{ std::move(range) };
+    }
+};
+
+struct contains_elements_fn
+{
+    template <class... Preds>
+    struct impl
+    {
+        std::tuple<Preds...> m_preds;
+
+        template <class U>
+        bool operator()(U&& item) const
+        {
+            return call<0>(std::begin(item), std::end(item));
+        }
+
+        template <std::size_t N, class Iter>
+        bool call(Iter begin, Iter end) const
+        {
+            // if constexpr (N == sizeof...(Preds))
+            // {
+            //     return true;
+            // }
+            // else
+            // {
+            //     return begin != end && invoke_pred(std::get<N>(m_preds), *begin) && call<N + 1>(std::next(begin), end);
+            // }
+            return false;
+        }
+
+        friend std::ostream& operator<<(std::ostream& os, const impl& item)
+        {
+            os << "("
+               << "contains_elements";
+            std::apply(
+                [&](const auto&... preds) { ((os << " " << ::ferrugo::core::safe_format(preds)), ...); }, item.m_preds);
+            os << ")";
+            return os;
+        }
+    };
+
+    template <class... Preds>
+    auto operator()(Preds&&... preds) const -> impl<std::decay_t<Preds>...>
+    {
+        return impl<std::decay_t<Preds>...>{ { std::forward<Preds>(preds)... } };
+    }
+};
+
+struct contains_array_fn
+{
+    template <class Range>
+    struct impl
+    {
+        Range m_range;
+
+        template <class U>
+        bool operator()(U&& item) const
+        {
+            // auto p_b = std::begin(unwrap(m_range));
+            // auto p_e = std::end(unwrap(m_range));
+
+            // auto b = std::begin(item);
+            // auto e = std::end(item);
+
+            // for (; b != e && p_b != p_e; ++b, ++p_b)
+            // {
+            //     if (!invoke_pred(*p_b, *b))
+            //     {
+            //         return false;
+            //     }
+            // }
+            // return p_b == p_e;
+            return false;
+        }
+
+        friend std::ostream& operator<<(std::ostream& os, const impl& item)
+        {
+            return os << "("
+                      << "contains_array " << ::ferrugo::core::safe_format(item.m_range) << ")";
+        }
+    };
+
+    template <class Range>
+    auto operator()(Range range) const -> impl<Range>
+    {
+        return impl<Range>{ std::move(range) };
+    }
+};
+
 template <class Name>
 struct result_of_fn
 {
@@ -475,6 +647,10 @@ static constexpr inline auto elements_are = detail::elements_are_fn{};
 static constexpr inline auto elements_are_array = detail::elements_are_array_fn{};
 static constexpr inline auto starts_with_elements = detail::starts_with_elements_fn{};
 static constexpr inline auto starts_with_array = detail::starts_with_array_fn{};
+static constexpr inline auto ends_with_elements = detail::ends_with_elements_fn{};
+static constexpr inline auto ends_with_array = detail::ends_with_array_fn{};
+static constexpr inline auto contains_elements = detail::contains_elements_fn{};
+static constexpr inline auto contains_array = detail::contains_array_fn{};
 
 static constexpr inline auto eq = detail::compare_fn<std::equal_to<>, static_string<'e', 'q'>>{};
 static constexpr inline auto ne = detail::compare_fn<std::not_equal_to<>, static_string<'n', 'e'>>{};
