@@ -216,6 +216,42 @@ TEST_CASE("predicates - elements_are", "")
     REQUIRE_THAT(pred(std::vector{ 0, 3, 5 }), matchers::equal_to(false));
 }
 
+TEST_CASE("predicates - elements_are_array", "")
+{
+    const auto pred = predicates::elements_are_array(std::vector{ 1, 3, 5 });
+    // REQUIRE_THAT(  //
+    //     (core::str(pred)),
+    //     matchers::equal_to("(elements_are 0 (ge 3) (le 5) 10)"sv));
+    REQUIRE_THAT(pred(std::vector{ 1, 3, 5 }), matchers::equal_to(true));
+    REQUIRE_THAT(pred(std::vector{ 1, 3, 5, 10 }), matchers::equal_to(false));
+    REQUIRE_THAT(pred(std::vector{ 1, 3 }), matchers::equal_to(false));
+    REQUIRE_THAT(pred(std::vector{ 2, 2, 5 }), matchers::equal_to(false));
+}
+
+TEST_CASE("predicates - starts_with_elements", "")
+{
+    const auto pred = predicates::starts_with_elements(0, predicates::ge(3), predicates::le(5), 10);
+    REQUIRE_THAT(  //
+        (core::str(pred)),
+        matchers::equal_to("(starts_with_elements 0 (ge 3) (le 5) 10)"sv));
+    REQUIRE_THAT(pred(std::vector{ 0, 3, 5, 10 }), matchers::equal_to(true));
+    REQUIRE_THAT(pred(std::vector{ 0, 3, 5, 10, 100 }), matchers::equal_to(true));
+    REQUIRE_THAT(pred(std::vector{ 0, 4, 4, 10 }), matchers::equal_to(true));
+    REQUIRE_THAT(pred(std::vector{ 0, 3, 5 }), matchers::equal_to(false));
+}
+
+TEST_CASE("predicates - starts_with_array", "")
+{
+    const auto pred = predicates::starts_with_array(std::vector{ 1, 3, 5 });
+    // REQUIRE_THAT(  //
+    //     (core::str(pred)),
+    //     matchers::equal_to("(elements_are 0 (ge 3) (le 5) 10)"sv));
+    REQUIRE_THAT(pred(std::vector{ 1, 3, 5 }), matchers::equal_to(true));
+    REQUIRE_THAT(pred(std::vector{ 1, 3, 5, 10 }), matchers::equal_to(true));
+    REQUIRE_THAT(pred(std::vector{ 1, 3 }), matchers::equal_to(false));
+    REQUIRE_THAT(pred(std::vector{ 2, 2, 5 }), matchers::equal_to(false));
+}
+
 TEST_CASE("predicates - result_of", "")
 {
     const auto pred = predicates::result_of([](const std::string& v) { return v.size(); }, predicates::le(3));

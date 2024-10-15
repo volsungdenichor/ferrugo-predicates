@@ -14,6 +14,23 @@ namespace predicates
 namespace detail
 {
 
+struct unwrap_fn
+{
+    template <class T>
+    auto operator()(T& item) const -> T&
+    {
+        return item;
+    }
+
+    template <class T>
+    auto operator()(std::reference_wrapper<T> item) const -> T&
+    {
+        return item;
+    }
+};
+
+static constexpr inline auto unwrap = unwrap_fn{};
+
 template <class L, class R>
 using is_equality_comparable = decltype(std::declval<L>() == std::declval<R>());
 
@@ -298,6 +315,122 @@ struct elements_are_fn
     }
 };
 
+struct elements_are_array_fn
+{
+    template <class Range>
+    struct impl
+    {
+        Range m_range;
+
+        template <class U>
+        bool operator()(U&& item) const
+        {
+            return std::equal(
+                std::begin(unwrap(m_range)),
+                std::end(unwrap(m_range)),
+                std::begin(item),
+                std::end(item),
+                [](auto&& p, auto&& it) { return invoke_pred(p, it); });
+        }
+
+        friend std::ostream& operator<<(std::ostream& os, const impl& item)
+        {
+            return os << "("
+                      << "elements_are_array " << ::ferrugo::core::safe_format(item.m_range) << ")";
+        }
+    };
+
+    template <class Range>
+    auto operator()(Range range) const -> impl<Range>
+    {
+        return impl<Range>{ std::move(range) };
+    }
+};
+
+struct starts_with_elements_fn
+{
+    template <class... Preds>
+    struct impl
+    {
+        std::tuple<Preds...> m_preds;
+
+        template <class U>
+        bool operator()(U&& item) const
+        {
+            return call<0>(std::begin(item), std::end(item));
+        }
+
+        template <std::size_t N, class Iter>
+        bool call(Iter begin, Iter end) const
+        {
+            if constexpr (N == sizeof...(Preds))
+            {
+                return true;
+            }
+            else
+            {
+                return begin != end && invoke_pred(std::get<N>(m_preds), *begin) && call<N + 1>(std::next(begin), end);
+            }
+        }
+
+        friend std::ostream& operator<<(std::ostream& os, const impl& item)
+        {
+            os << "("
+               << "starts_with_elements";
+            std::apply(
+                [&](const auto&... preds) { ((os << " " << ::ferrugo::core::safe_format(preds)), ...); }, item.m_preds);
+            os << ")";
+            return os;
+        }
+    };
+
+    template <class... Preds>
+    auto operator()(Preds&&... preds) const -> impl<std::decay_t<Preds>...>
+    {
+        return impl<std::decay_t<Preds>...>{ { std::forward<Preds>(preds)... } };
+    }
+};
+
+struct starts_with_array_fn
+{
+    template <class Range>
+    struct impl
+    {
+        Range m_range;
+
+        template <class U>
+        bool operator()(U&& item) const
+        {
+            auto p_b = std::begin(unwrap(m_range));
+            auto p_e = std::end(unwrap(m_range));
+
+            auto b = std::begin(item);
+            auto e = std::end(item);
+
+            for (; b != e && p_b != p_e; ++b, ++p_b)
+            {
+                if (!invoke_pred(*p_b, *b))
+                {
+                    return false;
+                }
+            }
+            return p_b == p_e;
+        }
+
+        friend std::ostream& operator<<(std::ostream& os, const impl& item)
+        {
+            return os << "("
+                      << "starts_with_array " << ::ferrugo::core::safe_format(item.m_range) << ")";
+        }
+    };
+
+    template <class Range>
+    auto operator()(Range range) const -> impl<Range>
+    {
+        return impl<Range>{ std::move(range) };
+    }
+};
+
 template <class Name>
 struct result_of_fn
 {
@@ -339,6 +472,9 @@ static constexpr inline auto contains = detail::contains_fn{};
 static constexpr inline auto size_is = detail::size_is_fn{};
 static constexpr inline auto is_empty = detail::is_empty_fn{};
 static constexpr inline auto elements_are = detail::elements_are_fn{};
+static constexpr inline auto elements_are_array = detail::elements_are_array_fn{};
+static constexpr inline auto starts_with_elements = detail::starts_with_elements_fn{};
+static constexpr inline auto starts_with_array = detail::starts_with_array_fn{};
 
 static constexpr inline auto eq = detail::compare_fn<std::equal_to<>, static_string<'e', 'q'>>{};
 static constexpr inline auto ne = detail::compare_fn<std::not_equal_to<>, static_string<'n', 'e'>>{};
