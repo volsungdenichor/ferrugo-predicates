@@ -252,6 +252,60 @@ TEST_CASE("predicates - starts_with_array", "")
     REQUIRE_THAT(pred(std::vector{ 2, 2, 5 }), matchers::equal_to(false));
 }
 
+TEST_CASE("predicates - ends_with_elements", "")
+{
+    SKIP();
+    const auto pred = predicates::ends_with_elements(0, predicates::ge(3), predicates::le(5), 10);
+    REQUIRE_THAT(  //
+        (core::str(pred)),
+        matchers::equal_to("(ends_with_elements 0 (ge 3) (le 5) 10)"sv));
+    REQUIRE_THAT(pred(std::vector{ 0, 3, 5, 10 }), matchers::equal_to(true));
+    REQUIRE_THAT(pred(std::vector{ 100, 99, 0, 3, 5, 10 }), matchers::equal_to(true));
+    REQUIRE_THAT(pred(std::vector{ 0, 4, 4, 10 }), matchers::equal_to(true));
+    REQUIRE_THAT(pred(std::vector{ 0, 3, 5 }), matchers::equal_to(false));
+}
+
+TEST_CASE("predicates - ends_with_array", "")
+{
+    SKIP();
+    const auto pred = predicates::ends_with_array(std::vector{ 1, 3, 5 });
+    // REQUIRE_THAT(  //
+    //     (core::str(pred)),
+    //     matchers::equal_to("(elements_are 0 (ge 3) (le 5) 10)"sv));
+    REQUIRE_THAT(pred(std::vector{ 1, 3, 5 }), matchers::equal_to(true));
+    REQUIRE_THAT(pred(std::vector{ 10, 1, 3, 5 }), matchers::equal_to(true));
+    REQUIRE_THAT(pred(std::vector{ 3, 5 }), matchers::equal_to(false));
+    REQUIRE_THAT(pred(std::vector{ 2, 2, 5 }), matchers::equal_to(false));
+}
+
+TEST_CASE("predicates - contains_elements", "")
+{
+    SKIP();
+    const auto pred = predicates::contains_elements(0, predicates::ge(3), predicates::le(5), 10);
+    REQUIRE_THAT(  //
+        (core::str(pred)),
+        matchers::equal_to("(contains_elements 0 (ge 3) (le 5) 10)"sv));
+    REQUIRE_THAT(pred(std::vector{ 0, 3, 5, 10 }), matchers::equal_to(true));
+    REQUIRE_THAT(pred(std::vector{ 100, 99, 0, 3, 5, 10 }), matchers::equal_to(true));
+    REQUIRE_THAT(pred(std::vector{ 100, 99, 0, 3, 5, 10, 200 }), matchers::equal_to(true));
+    REQUIRE_THAT(pred(std::vector{ 0, 4, 4, 10 }), matchers::equal_to(true));
+    REQUIRE_THAT(pred(std::vector{ 0, 3, 5 }), matchers::equal_to(false));
+}
+
+TEST_CASE("predicates - contains_array", "")
+{
+    SKIP();
+    const auto pred = predicates::contains_array(std::vector{ 1, 3, 5 });
+    // REQUIRE_THAT(  //
+    //     (core::str(pred)),
+    //     matchers::equal_to("(elements_are 0 (ge 3) (le 5) 10)"sv));
+    REQUIRE_THAT(pred(std::vector{ 1, 3, 5 }), matchers::equal_to(true));
+    REQUIRE_THAT(pred(std::vector{ 10, 1, 3, 5 }), matchers::equal_to(true));
+    REQUIRE_THAT(pred(std::vector{ 10, 1, 3, 5, 20 }), matchers::equal_to(true));
+    REQUIRE_THAT(pred(std::vector{ 3, 5 }), matchers::equal_to(false));
+    REQUIRE_THAT(pred(std::vector{ 2, 2, 5 }), matchers::equal_to(false));
+}
+
 TEST_CASE("predicates - result_of", "")
 {
     const auto pred = predicates::result_of([](const std::string& v) { return v.size(); }, predicates::le(3));
@@ -296,4 +350,103 @@ TEST_CASE("predicates - property", "")
     REQUIRE_THAT(pred(test_t{ 3 }), matchers::equal_to(true));
     REQUIRE_THAT(pred(test_t{ 2 }), matchers::equal_to(true));
     REQUIRE_THAT(pred(test_t{ 12 }), matchers::equal_to(false));
+}
+
+TEST_CASE("predicates - is_divisible_by", "")
+{
+    const auto pred = predicates::is_divisible_by(3);
+    REQUIRE_THAT(  //
+        (core::str(pred)),
+        matchers::equal_to("(is_divisible_by 3)"sv));
+
+    REQUIRE_THAT(pred(3), matchers::equal_to(true));
+    REQUIRE_THAT(pred(6), matchers::equal_to(true));
+    REQUIRE_THAT(pred(5), matchers::equal_to(false));
+}
+
+TEST_CASE("predicates - is_odd", "")
+{
+    const auto pred = predicates::is_odd();
+    REQUIRE_THAT(  //
+        (core::str(pred)),
+        matchers::equal_to("(is_odd)"sv));
+    REQUIRE_THAT(pred(3), matchers::equal_to(true));
+    REQUIRE_THAT(pred(5), matchers::equal_to(true));
+    REQUIRE_THAT(pred(2), matchers::equal_to(false));
+}
+
+TEST_CASE("predicates - is_even", "")
+{
+    const auto pred = predicates::is_even();
+    REQUIRE_THAT(  //
+        (core::str(pred)),
+        matchers::equal_to("(is_even)"sv));
+    REQUIRE_THAT(pred(4), matchers::equal_to(true));
+    REQUIRE_THAT(pred(6), matchers::equal_to(true));
+    REQUIRE_THAT(pred(5), matchers::equal_to(false));
+}
+
+TEST_CASE("predicates - is_space", "")
+{
+    const auto pred = predicates::is_space();
+    REQUIRE_THAT(  //
+        (core::str(pred)),
+        matchers::equal_to("(is_space)"sv));
+    REQUIRE_THAT(pred(' '), matchers::equal_to(true));
+    REQUIRE_THAT(pred('\n'), matchers::equal_to(true));
+    REQUIRE_THAT(pred('X'), matchers::equal_to(false));
+}
+
+TEST_CASE("predicates - is_digit", "")
+{
+    const auto pred = predicates::is_digit();
+    REQUIRE_THAT(  //
+        (core::str(pred)),
+        matchers::equal_to("(is_digit)"sv));
+    REQUIRE_THAT(pred('1'), matchers::equal_to(true));
+    REQUIRE_THAT(pred('9'), matchers::equal_to(true));
+    REQUIRE_THAT(pred('A'), matchers::equal_to(false));
+}
+
+TEST_CASE("predicates - is_alnum", "")
+{
+    const auto pred = predicates::is_alnum();
+    REQUIRE_THAT(  //
+        (core::str(pred)),
+        matchers::equal_to("(is_alnum)"sv));
+    REQUIRE_THAT(pred('A'), matchers::equal_to(true));
+    REQUIRE_THAT(pred('3'), matchers::equal_to(true));
+    REQUIRE_THAT(pred(' '), matchers::equal_to(false));
+}
+
+TEST_CASE("predicates - is_alpha", "")
+{
+    const auto pred = predicates::is_alpha();
+    REQUIRE_THAT(  //
+        (core::str(pred)),
+        matchers::equal_to("(is_alpha)"sv));
+    REQUIRE_THAT(pred('A'), matchers::equal_to(true));
+    REQUIRE_THAT(pred('Z'), matchers::equal_to(true));
+    REQUIRE_THAT(pred('3'), matchers::equal_to(false));
+    REQUIRE_THAT(pred(' '), matchers::equal_to(false));
+}
+
+TEST_CASE("predicates - is_upper", "")
+{
+    const auto pred = predicates::is_upper();
+    REQUIRE_THAT(  //
+        (core::str(pred)),
+        matchers::equal_to("(is_upper)"sv));
+    REQUIRE_THAT(pred('A'), matchers::equal_to(true));
+    REQUIRE_THAT(pred('a'), matchers::equal_to(false));
+}
+
+TEST_CASE("predicates - is_lower", "")
+{
+    const auto pred = predicates::is_lower();
+    REQUIRE_THAT(  //
+        (core::str(pred)),
+        matchers::equal_to("(is_lower)"sv));
+    REQUIRE_THAT(pred('a'), matchers::equal_to(true));
+    REQUIRE_THAT(pred('A'), matchers::equal_to(false));
 }

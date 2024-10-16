@@ -1,9 +1,12 @@
 #pragma once
 
 #include <ferrugo/core/ostream_utils.hpp>
+#include <ferrugo/core/source_location.hpp>
 #include <ferrugo/core/type_traits.hpp>
 #include <ferrugo/predicates/static_string.hpp>
 #include <functional>
+#include <optional>
+#include <sstream>
 #include <variant>
 
 namespace ferrugo
@@ -137,6 +140,51 @@ struct negate_fn
     auto operator()(Pred&& pred) const -> impl<std::decay_t<Pred>>
     {
         return impl<std::decay_t<Pred>>{ std::forward<Pred>(pred) };
+    }
+};
+
+struct is_some_fn
+{
+    template <class Pred>
+    struct impl
+    {
+        Pred pred;
+
+        template <class U>
+        bool operator()(U&& item) const
+        {
+            return static_cast<bool>(item) && invoke_pred(pred, *std::forward<U>(item));
+        }
+
+        friend std::ostream& operator<<(std::ostream& os, const impl& item)
+        {
+            return os << "(is_some " << item.pred << ")";
+        }
+    };
+
+    struct void_impl
+    {
+        template <class U>
+        bool operator()(U&& item) const
+        {
+            return static_cast<bool>(item);
+        }
+
+        friend std::ostream& operator<<(std::ostream& os, const void_impl& item)
+        {
+            return os << "(is_some)";
+        }
+    };
+
+    template <class Pred>
+    auto operator()(Pred&& pred) const -> impl<std::decay_t<Pred>>
+    {
+        return impl<std::decay_t<Pred>>{ std::forward<Pred>(pred) };
+    }
+
+    auto operator()() const -> void_impl
+    {
+        return void_impl{};
     }
 };
 
@@ -407,14 +455,7 @@ struct starts_with_array_fn
             auto b = std::begin(item);
             auto e = std::end(item);
 
-            for (; b != e && p_b != p_e; ++b, ++p_b)
-            {
-                if (!invoke_pred(*p_b, *b))
-                {
-                    return false;
-                }
-            }
-            return p_b == p_e;
+            return std::search(b, e, p_b, p_e, [](auto&& it, auto&& p) { return invoke_pred(p, it); }) == b;
         }
 
         friend std::ostream& operator<<(std::ostream& os, const impl& item)
@@ -447,14 +488,14 @@ struct ends_with_elements_fn
         template <std::size_t N, class Iter>
         bool call(Iter begin, Iter end) const
         {
-            // if constexpr (N == sizeof...(Preds))
-            // {
-            //     return true;
-            // }
-            // else
-            // {
-            //     return begin != end && invoke_pred(std::get<N>(m_preds), *begin) && call<N + 1>(std::next(begin), end);
-            // }
+            if constexpr (N == sizeof...(Preds))
+            {
+                return true;
+            }
+            else
+            {
+                return begin != end && invoke_pred(std::get<N>(m_preds), *begin) && call<N + 1>(std::next(begin), end);
+            }
             return false;
         }
 
@@ -486,21 +527,20 @@ struct ends_with_array_fn
         template <class U>
         bool operator()(U&& item) const
         {
-            // auto p_b = std::begin(unwrap(m_range));
-            // auto p_e = std::end(unwrap(m_range));
+            auto p_b = std::begin(unwrap(m_range));
+            auto p_e = std::end(unwrap(m_range));
 
-            // auto b = std::begin(item);
-            // auto e = std::end(item);
+            auto b = std::begin(item);
+            auto e = std::end(item);
 
-            // for (; b != e && p_b != p_e; ++b, ++p_b)
-            // {
-            //     if (!invoke_pred(*p_b, *b))
-            //     {
-            //         return false;
-            //     }
-            // }
-            // return p_b == p_e;
-            return false;
+            for (; b != e && p_b != p_e; ++b, ++p_b)
+            {
+                if (!invoke_pred(*p_b, *b))
+                {
+                    return false;
+                }
+            }
+            return p_b == p_e;
         }
 
         friend std::ostream& operator<<(std::ostream& os, const impl& item)
@@ -533,15 +573,14 @@ struct contains_elements_fn
         template <std::size_t N, class Iter>
         bool call(Iter begin, Iter end) const
         {
-            // if constexpr (N == sizeof...(Preds))
-            // {
-            //     return true;
-            // }
-            // else
-            // {
-            //     return begin != end && invoke_pred(std::get<N>(m_preds), *begin) && call<N + 1>(std::next(begin), end);
-            // }
-            return false;
+            if constexpr (N == sizeof...(Preds))
+            {
+                return true;
+            }
+            else
+            {
+                return begin != end && invoke_pred(std::get<N>(m_preds), *begin) && call<N + 1>(std::next(begin), end);
+            }
         }
 
         friend std::ostream& operator<<(std::ostream& os, const impl& item)
@@ -572,21 +611,20 @@ struct contains_array_fn
         template <class U>
         bool operator()(U&& item) const
         {
-            // auto p_b = std::begin(unwrap(m_range));
-            // auto p_e = std::end(unwrap(m_range));
+            auto p_b = std::begin(unwrap(m_range));
+            auto p_e = std::end(unwrap(m_range));
 
-            // auto b = std::begin(item);
-            // auto e = std::end(item);
+            auto b = std::begin(item);
+            auto e = std::end(item);
 
-            // for (; b != e && p_b != p_e; ++b, ++p_b)
-            // {
-            //     if (!invoke_pred(*p_b, *b))
-            //     {
-            //         return false;
-            //     }
-            // }
-            // return p_b == p_e;
-            return false;
+            for (; b != e && p_b != p_e; ++b, ++p_b)
+            {
+                if (!invoke_pred(*p_b, *b))
+                {
+                    return false;
+                }
+            }
+            return p_b == p_e;
         }
 
         friend std::ostream& operator<<(std::ostream& os, const impl& item)
@@ -633,16 +671,233 @@ struct result_of_fn
     }
 };
 
+struct is_divisible_by_fn
+{
+    struct impl
+    {
+        int m_divisor;
+
+        template <class T>
+        bool operator()(T&& item) const
+        {
+            return item % m_divisor == 0;
+        }
+
+        friend std::ostream& operator<<(std::ostream& os, const impl& item)
+        {
+            return os << "(is_divisible_by " << item.m_divisor << ")";
+        }
+    };
+
+    auto operator()(int divisor) const -> impl
+    {
+        return impl{ divisor };
+    }
+};
+
+struct is_even_fn
+{
+    struct impl
+    {
+        template <class T>
+        bool operator()(T&& item) const
+        {
+            return item % 2 == 0;
+        }
+
+        friend std::ostream& operator<<(std::ostream& os, const impl& item)
+        {
+            return os << "(is_even)";
+        }
+    };
+
+    auto operator()() const -> impl
+    {
+        return impl{};
+    }
+};
+
+struct is_odd_fn
+{
+    struct impl
+    {
+        template <class T>
+        bool operator()(T&& item) const
+        {
+            return item % 2 != 0;
+        }
+
+        friend std::ostream& operator<<(std::ostream& os, const impl& item)
+        {
+            return os << "(is_odd)";
+        }
+    };
+
+    auto operator()() const -> impl
+    {
+        return impl{};
+    }
+};
+
+struct is_digit_fn
+{
+    struct impl
+    {
+        bool operator()(char item) const
+        {
+            return std::isdigit(item);
+        }
+
+        friend std::ostream& operator<<(std::ostream& os, const impl& item)
+        {
+            return os << "(is_digit)";
+        }
+    };
+
+    auto operator()() const -> impl
+    {
+        return impl{};
+    }
+};
+struct is_space_fn
+{
+    struct impl
+    {
+        bool operator()(char item) const
+        {
+            return std::isspace(item);
+        }
+
+        friend std::ostream& operator<<(std::ostream& os, const impl& item)
+        {
+            return os << "(is_space)";
+        }
+    };
+
+    auto operator()() const -> impl
+    {
+        return impl{};
+    }
+};
+struct is_alnum_fn
+{
+    struct impl
+    {
+        bool operator()(char item) const
+        {
+            return std::isalnum(item);
+        }
+
+        friend std::ostream& operator<<(std::ostream& os, const impl& item)
+        {
+            return os << "(is_alnum)";
+        }
+    };
+
+    auto operator()() const -> impl
+    {
+        return impl{};
+    }
+};
+struct is_alpha_fn
+{
+    struct impl
+    {
+        bool operator()(char item) const
+        {
+            return std::isalpha(item);
+        }
+
+        friend std::ostream& operator<<(std::ostream& os, const impl& item)
+        {
+            return os << "(is_alpha)";
+        }
+    };
+
+    auto operator()() const -> impl
+    {
+        return impl{};
+    }
+};
+struct is_upper_fn
+{
+    struct impl
+    {
+        bool operator()(char item) const
+        {
+            return std::isupper(item);
+        }
+
+        friend std::ostream& operator<<(std::ostream& os, const impl& item)
+        {
+            return os << "(is_upper)";
+        }
+    };
+
+    auto operator()() const -> impl
+    {
+        return impl{};
+    }
+};
+struct is_lower_fn
+{
+    struct impl
+    {
+        bool operator()(char item) const
+        {
+            return std::islower(item);
+        }
+
+        friend std::ostream& operator<<(std::ostream& os, const impl& item)
+        {
+            return os << "(is_lower)";
+        }
+    };
+
+    auto operator()() const -> impl
+    {
+        return impl{};
+    }
+};
+
 }  // namespace detail
+
+struct assertion_error : std::runtime_error
+{
+    explicit assertion_error(std::string msg) : std::runtime_error(std::move(msg))
+    {
+    }
+};
+
+template <class T, class Pred>
+void assert_that(const T& item, const Pred& pred, const std::optional<::ferrugo::core::source_location>& loc = {})
+{
+    if (pred(item))
+    {
+        return;
+    }
+    std::stringstream ss;
+    ss << "assertion failed:" << '\n';
+    ss << "value: " << ::ferrugo::core::safe_format(item) << '\n';
+    ss << "does not match the predicate: " << ::ferrugo::core::safe_format(pred) << '\n';
+    if (loc)
+    {
+        ss << "at " << *loc << "\n";
+    }
+    throw assertion_error{ ss.str() };
+}
 
 static constexpr inline auto any = detail::compound_fn<detail::any_tag, static_string<'a', 'n', 'y'>>{};
 static constexpr inline auto all = detail::compound_fn<detail::all_tag, static_string<'a', 'l', 'l'>>{};
 static constexpr inline auto negate = detail::negate_fn{};
 
+static constexpr inline auto is_some = detail::is_some_fn{};
+
 static constexpr inline auto each = detail::each_fn{};
 static constexpr inline auto contains = detail::contains_fn{};
 static constexpr inline auto size_is = detail::size_is_fn{};
 static constexpr inline auto is_empty = detail::is_empty_fn{};
+
 static constexpr inline auto elements_are = detail::elements_are_fn{};
 static constexpr inline auto elements_are_array = detail::elements_are_array_fn{};
 static constexpr inline auto starts_with_elements = detail::starts_with_elements_fn{};
@@ -659,9 +914,20 @@ static constexpr inline auto gt = detail::compare_fn<std::greater<>, static_stri
 static constexpr inline auto le = detail::compare_fn<std::less_equal<>, static_string<'l', 'e'>>{};
 static constexpr inline auto ge = detail::compare_fn<std::greater_equal<>, static_string<'g', 'e'>>{};
 
+static constexpr inline auto is_divisible_by = detail::is_divisible_by_fn{};
+static constexpr inline auto is_odd = detail::is_odd_fn{};
+static constexpr inline auto is_even = detail::is_even_fn{};
+
 static constexpr inline auto result_of = detail::result_of_fn<static_string<'r', 'e', 's', 'u', 'l', 't', '_', 'o', 'f'>>{};
 static constexpr inline auto field = detail::result_of_fn<static_string<'f', 'i', 'e', 'l', 'd'>>{};
 static constexpr inline auto property = detail::result_of_fn<static_string<'p', 'r', 'o', 'p', 'e', 'r', 't', 'y'>>{};
+
+static constexpr inline auto is_space = detail::is_space_fn{};
+static constexpr inline auto is_digit = detail::is_digit_fn{};
+static constexpr inline auto is_alnum = detail::is_alnum_fn{};
+static constexpr inline auto is_alpha = detail::is_alpha_fn{};
+static constexpr inline auto is_upper = detail::is_upper_fn{};
+static constexpr inline auto is_lower = detail::is_lower_fn{};
 
 }  // namespace predicates
 }  // namespace ferrugo
