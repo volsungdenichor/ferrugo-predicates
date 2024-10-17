@@ -3,6 +3,7 @@
 #include <ferrugo/core/ostream_utils.hpp>
 #include <ferrugo/core/source_location.hpp>
 #include <ferrugo/core/type_traits.hpp>
+#include <ferrugo/core/types.hpp>
 #include <ferrugo/predicates/static_string.hpp>
 #include <functional>
 #include <optional>
@@ -319,8 +320,24 @@ struct contains_fn
     }
 };
 
+struct elements_are
+{
+};
+
 struct elements_are_fn
 {
+    template <std::size_t N = 0, class... Preds, class Iter>
+    static bool call(const std::tuple<Preds...>& preds, Iter begin, Iter end)
+    {
+        if constexpr (N == sizeof...(Preds))
+        {
+            return begin == end;
+        }
+        else
+        {
+            return begin != end && invoke_pred(std::get<N>(preds), *begin) && call<N + 1>(preds, std::next(begin), end);
+        }
+    }
     template <class... Preds>
     struct impl
     {
@@ -329,20 +346,7 @@ struct elements_are_fn
         template <class U>
         bool operator()(U&& item) const
         {
-            return call<0>(std::begin(item), std::end(item));
-        }
-
-        template <std::size_t N, class Iter>
-        bool call(Iter begin, Iter end) const
-        {
-            if constexpr (N == sizeof...(Preds))
-            {
-                return begin == end;
-            }
-            else
-            {
-                return begin != end && invoke_pred(std::get<N>(m_preds), *begin) && call<N + 1>(std::next(begin), end);
-            }
+            return call(m_preds, std::begin(item), std::end(item));
         }
 
         friend std::ostream& operator<<(std::ostream& os, const impl& item)
@@ -365,6 +369,11 @@ struct elements_are_fn
 
 struct elements_are_array_fn
 {
+    template <class PIter, class Iter>
+    static bool call(PIter p_b, PIter p_e, Iter begin, Iter end)
+    {
+        return std::equal(p_b, p_e, begin, end, [](auto&& p, auto&& it) { return invoke_pred(p, it); });
+    }
     template <class Range>
     struct impl
     {
@@ -373,12 +382,7 @@ struct elements_are_array_fn
         template <class U>
         bool operator()(U&& item) const
         {
-            return std::equal(
-                std::begin(unwrap(m_range)),
-                std::end(unwrap(m_range)),
-                std::begin(item),
-                std::end(item),
-                [](auto&& p, auto&& it) { return invoke_pred(p, it); });
+            return call(std::begin(unwrap(m_range)), std::end(unwrap(m_range)), std::begin(item), std::end(item));
         }
 
         friend std::ostream& operator<<(std::ostream& os, const impl& item)
@@ -405,20 +409,11 @@ struct starts_with_elements_fn
         template <class U>
         bool operator()(U&& item) const
         {
-            return call<0>(std::begin(item), std::end(item));
-        }
-
-        template <std::size_t N, class Iter>
-        bool call(Iter begin, Iter end) const
-        {
-            if constexpr (N == sizeof...(Preds))
-            {
-                return true;
-            }
-            else
-            {
-                return begin != end && invoke_pred(std::get<N>(m_preds), *begin) && call<N + 1>(std::next(begin), end);
-            }
+            const auto b = std::begin(unwrap(item));
+            const auto e = std::end(unwrap(item));
+            const auto preds_count = sizeof...(Preds);
+            const auto size = std::distance(b, e);
+            return size >= preds_count && elements_are_fn ::call(m_preds, b, std::next(b, preds_count));
         }
 
         friend std::ostream& operator<<(std::ostream& os, const impl& item)
@@ -449,13 +444,13 @@ struct starts_with_array_fn
         template <class U>
         bool operator()(U&& item) const
         {
-            auto p_b = std::begin(unwrap(m_range));
-            auto p_e = std::end(unwrap(m_range));
-
-            auto b = std::begin(item);
-            auto e = std::end(item);
-
-            return std::search(b, e, p_b, p_e, [](auto&& it, auto&& p) { return invoke_pred(p, it); }) == b;
+            const auto p_b = std::begin(unwrap(m_range));
+            const auto p_e = std::end(unwrap(m_range));
+            const auto b = std::begin(unwrap(item));
+            const auto e = std::end(unwrap(item));
+            const auto preds_count = std::distance(p_b, p_e);
+            const auto size = std::distance(b, e);
+            return size >= preds_count && elements_are_array_fn::call(p_b, p_e, b, std::next(b, preds_count));
         }
 
         friend std::ostream& operator<<(std::ostream& os, const impl& item)
@@ -482,21 +477,11 @@ struct ends_with_elements_fn
         template <class U>
         bool operator()(U&& item) const
         {
-            return call<0>(std::begin(item), std::end(item));
-        }
-
-        template <std::size_t N, class Iter>
-        bool call(Iter begin, Iter end) const
-        {
-            if constexpr (N == sizeof...(Preds))
-            {
-                return true;
-            }
-            else
-            {
-                return begin != end && invoke_pred(std::get<N>(m_preds), *begin) && call<N + 1>(std::next(begin), end);
-            }
-            return false;
+            const auto b = std::begin(unwrap(item));
+            const auto e = std::end(unwrap(item));
+            const auto preds_count = sizeof...(Preds);
+            const auto size = std::distance(b, e);
+            return size >= preds_count && elements_are_fn::call(m_preds, std::next(b, size - preds_count), e);
         }
 
         friend std::ostream& operator<<(std::ostream& os, const impl& item)
@@ -527,20 +512,13 @@ struct ends_with_array_fn
         template <class U>
         bool operator()(U&& item) const
         {
-            auto p_b = std::begin(unwrap(m_range));
-            auto p_e = std::end(unwrap(m_range));
-
-            auto b = std::begin(item);
-            auto e = std::end(item);
-
-            for (; b != e && p_b != p_e; ++b, ++p_b)
-            {
-                if (!invoke_pred(*p_b, *b))
-                {
-                    return false;
-                }
-            }
-            return p_b == p_e;
+            const auto p_b = std::begin(unwrap(m_range));
+            const auto p_e = std::end(unwrap(m_range));
+            const auto b = std::begin(unwrap(item));
+            const auto e = std::end(unwrap(item));
+            const auto preds_count = std::distance(p_b, p_e);
+            const auto size = std::distance(b, e);
+            return size >= preds_count && elements_are_array_fn::call(p_b, p_e, std::next(b, size - preds_count), e);
         }
 
         friend std::ostream& operator<<(std::ostream& os, const impl& item)
@@ -567,20 +545,22 @@ struct contains_elements_fn
         template <class U>
         bool operator()(U&& item) const
         {
-            return call<0>(std::begin(item), std::end(item));
-        }
-
-        template <std::size_t N, class Iter>
-        bool call(Iter begin, Iter end) const
-        {
-            if constexpr (N == sizeof...(Preds))
+            const auto b = std::begin(unwrap(item));
+            const auto e = std::end(unwrap(item));
+            const auto preds_count = sizeof...(Preds);
+            const auto size = std::distance(b, e);
+            if (size < preds_count)
             {
-                return true;
+                return false;
             }
-            else
+            for (std::size_t i = 0; i < size - preds_count + 1; ++i)
             {
-                return begin != end && invoke_pred(std::get<N>(m_preds), *begin) && call<N + 1>(std::next(begin), end);
+                if (elements_are_fn::call(m_preds, std::next(b, i), std::next(b, i + preds_count)))
+                {
+                    return true;
+                }
             }
+            return false;
         }
 
         friend std::ostream& operator<<(std::ostream& os, const impl& item)
@@ -611,20 +591,24 @@ struct contains_array_fn
         template <class U>
         bool operator()(U&& item) const
         {
-            auto p_b = std::begin(unwrap(m_range));
-            auto p_e = std::end(unwrap(m_range));
-
-            auto b = std::begin(item);
-            auto e = std::end(item);
-
-            for (; b != e && p_b != p_e; ++b, ++p_b)
+            const auto p_b = std::begin(unwrap(m_range));
+            const auto p_e = std::end(unwrap(m_range));
+            const auto b = std::begin(unwrap(item));
+            const auto e = std::end(unwrap(item));
+            const auto preds_count = std::distance(p_b, p_e);
+            const auto size = std::distance(b, e);
+            if (size < preds_count)
             {
-                if (!invoke_pred(*p_b, *b))
+                return false;
+            }
+            for (std::size_t i = 0; i < size - preds_count + 1; ++i)
+            {
+                if (elements_are_array_fn::call(p_b, p_e, std::next(b, i), std::next(b, i + preds_count)))
                 {
-                    return false;
+                    return true;
                 }
             }
-            return p_b == p_e;
+            return false;
         }
 
         friend std::ostream& operator<<(std::ostream& os, const impl& item)
@@ -861,6 +845,18 @@ struct is_lower_fn
 };
 
 }  // namespace detail
+
+template <class T>
+struct predicate : std::function<bool(::ferrugo::core::in_t<T>)>
+{
+    using base_t = std::function<bool(::ferrugo::core::in_t<T>)>;
+    using base_t::base_t;
+
+    friend std::ostream& operator<<(std::ostream& os, const predicate& item)
+    {
+        return os << "predicate<" << ::ferrugo::core::type_name<T>() << ">";
+    }
+};
 
 struct assertion_error : std::runtime_error
 {
