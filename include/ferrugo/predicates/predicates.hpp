@@ -189,6 +189,38 @@ struct is_some_fn
     }
 };
 
+struct is_none_fn
+{
+    struct impl
+    {
+        template <class U>
+        bool operator()(U&& item) const
+        {
+            return !static_cast<bool>(item);
+        }
+
+        bool operator()(nullptr_t) const
+        {
+            return false;
+        }
+
+        bool operator()(std::nullopt_t) const
+        {
+            return false;
+        }
+
+        friend std::ostream& operator<<(std::ostream& os, const impl& item)
+        {
+            return os << "(is_none)";
+        }
+    };
+
+    auto operator()() const -> impl
+    {
+        return impl{};
+    }
+};
+
 template <class Op, class Name>
 struct compare_fn
 {
@@ -844,6 +876,70 @@ struct is_lower_fn
     }
 };
 
+template <std::size_t N>
+struct element_fn
+{
+    template <class Pred>
+    struct impl
+    {
+        Pred pred;
+
+        template <class U>
+        bool operator()(U&& item) const
+        {
+            return invoke_pred(pred, std::get<N>(item));
+        }
+
+        friend std::ostream& operator<<(std::ostream& os, const impl& item)
+        {
+            return os << "(element " << N << " " << item.pred << ")";
+        }
+    };
+
+    template <class Pred>
+    auto operator()(Pred&& pred) const -> impl<std::decay_t<Pred>>
+    {
+        return impl<std::decay_t<Pred>>{ std::forward<Pred>(pred) };
+    }
+};
+
+struct fields_are_fn
+{
+    template <class... Preds>
+    struct impl
+    {
+        std::tuple<Preds...> m_preds;
+
+        template <class U>
+        bool operator()(U&& item) const
+        {
+            return call(std::forward<U>(item), std::index_sequence_for<Preds...>{});
+        }
+
+        template <class U, std::size_t... I>
+        bool call(U&& item, std::index_sequence<I...>) const
+        {
+            return (invoke_pred(std::get<I>(m_preds), std::get<I>(std::forward<U>(item))) && ...);
+        }
+
+        friend std::ostream& operator<<(std::ostream& os, const impl& item)
+        {
+            os << "("
+               << "fields_are";
+            std::apply(
+                [&](const auto&... preds) { ((os << " " << ::ferrugo::core::safe_format(preds)), ...); }, item.m_preds);
+            os << ")";
+            return os;
+        }
+    };
+
+    template <class... Preds>
+    auto operator()(Preds&&... preds) const -> impl<std::decay_t<Preds>...>
+    {
+        return impl<std::decay_t<Preds>...>{ { std::forward<Preds>(preds)... } };
+    }
+};
+
 }  // namespace detail
 
 template <class T>
@@ -888,6 +984,7 @@ static constexpr inline auto all = detail::compound_fn<detail::all_tag, static_s
 static constexpr inline auto negate = detail::negate_fn{};
 
 static constexpr inline auto is_some = detail::is_some_fn{};
+static constexpr inline auto is_none = detail::is_none_fn{};
 
 static constexpr inline auto each = detail::each_fn{};
 static constexpr inline auto contains = detail::contains_fn{};
@@ -924,6 +1021,11 @@ static constexpr inline auto is_alnum = detail::is_alnum_fn{};
 static constexpr inline auto is_alpha = detail::is_alpha_fn{};
 static constexpr inline auto is_upper = detail::is_upper_fn{};
 static constexpr inline auto is_lower = detail::is_lower_fn{};
+
+template <std::size_t N>
+static constexpr inline auto element = detail::element_fn<N>{};
+
+static constexpr inline auto fields_are = detail::fields_are_fn{};
 
 }  // namespace predicates
 }  // namespace ferrugo

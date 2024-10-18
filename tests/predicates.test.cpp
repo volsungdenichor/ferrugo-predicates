@@ -158,6 +158,18 @@ TEST_CASE("predicates - negate", "")
     REQUIRE_THAT(pred(5), matchers::equal_to(true));
 }
 
+TEST_CASE("predicates - is_some", "")
+{
+    const auto pred = predicates::is_some(predicates::ge(5));
+    REQUIRE_THAT(  //
+        core::str(pred),
+        matchers::equal_to("(is_some (ge 5))"sv));
+    REQUIRE_THAT(pred(std::optional{ 5 }), matchers::equal_to(true));
+    REQUIRE_THAT(pred(std::optional{ 6 }), matchers::equal_to(true));
+    REQUIRE_THAT(pred(std::optional{ 4 }), matchers::equal_to(false));
+    REQUIRE_THAT(pred(std::optional<int>{}), matchers::equal_to(false));
+}
+
 TEST_CASE("predicates - is_empty", "")
 {
     const auto pred = predicates::is_empty();
@@ -445,4 +457,29 @@ TEST_CASE("predicates - is_lower", "")
         matchers::equal_to("(is_lower)"sv));
     REQUIRE_THAT(pred('a'), matchers::equal_to(true));
     REQUIRE_THAT(pred('A'), matchers::equal_to(false));
+}
+
+TEST_CASE("predicates - fields_are", "")
+{
+    const auto pred = predicates::fields_are(predicates::ge(10), predicates::eq('X'), predicates::contains('_'));
+    REQUIRE_THAT(  //
+        core::str(pred),
+        matchers::equal_to("(fields_are (ge 10) (eq X) (contains _))"sv));
+    REQUIRE_THAT(pred(std::tuple{ 10, 'X', "12_"sv }), matchers::equal_to(true));
+    REQUIRE_THAT(pred(std::tuple{ 15, 'X', "_"sv }), matchers::equal_to(true));
+
+    REQUIRE_THAT(pred(std::tuple{ 10, 'Z', "_"sv }), matchers::equal_to(false));
+}
+
+TEST_CASE("predicates - element", "")
+{
+    const auto pred = predicates::element<1>(predicates::ge(5));
+    REQUIRE_THAT(  //
+        core::str(pred),
+        matchers::equal_to("(element 1 (ge 5))"sv));
+
+    REQUIRE_THAT(pred(std::tuple{ ' ', 5, ' ' }), matchers::equal_to(true));
+    REQUIRE_THAT(pred(std::tuple{ ' ', 6, ' ' }), matchers::equal_to(true));
+
+    REQUIRE_THAT(pred(std::tuple{ ' ', 4, ' ' }), matchers::equal_to(false));
 }
