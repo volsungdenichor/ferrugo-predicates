@@ -979,8 +979,8 @@ void assert_that(const T& item, const Pred& pred, const std::optional<::ferrugo:
     throw assertion_error{ ss.str() };
 }
 
-static constexpr inline auto any = detail::compound_fn<detail::any_tag, static_string<'a', 'n', 'y'>>{};
-static constexpr inline auto all = detail::compound_fn<detail::all_tag, static_string<'a', 'l', 'l'>>{};
+static constexpr inline auto any = detail::compound_fn<detail::any_tag, FERRUGO_STATIC_STRING("any")>{};
+static constexpr inline auto all = detail::compound_fn<detail::all_tag, FERRUGO_STATIC_STRING("all")>{};
 static constexpr inline auto negate = detail::negate_fn{};
 
 static constexpr inline auto is_some = detail::is_some_fn{};
@@ -1000,20 +1000,20 @@ static constexpr inline auto ends_with_array = detail::ends_with_array_fn{};
 static constexpr inline auto contains_elements = detail::contains_elements_fn{};
 static constexpr inline auto contains_array = detail::contains_array_fn{};
 
-static constexpr inline auto eq = detail::compare_fn<std::equal_to<>, static_string<'e', 'q'>>{};
-static constexpr inline auto ne = detail::compare_fn<std::not_equal_to<>, static_string<'n', 'e'>>{};
-static constexpr inline auto lt = detail::compare_fn<std::less<>, static_string<'l', 't'>>{};
-static constexpr inline auto gt = detail::compare_fn<std::greater<>, static_string<'g', 't'>>{};
-static constexpr inline auto le = detail::compare_fn<std::less_equal<>, static_string<'l', 'e'>>{};
-static constexpr inline auto ge = detail::compare_fn<std::greater_equal<>, static_string<'g', 'e'>>{};
+static constexpr inline auto eq = detail::compare_fn<std::equal_to<>, FERRUGO_STATIC_STRING("eq")>{};
+static constexpr inline auto ne = detail::compare_fn<std::not_equal_to<>, FERRUGO_STATIC_STRING("ne")>{};
+static constexpr inline auto lt = detail::compare_fn<std::less<>, FERRUGO_STATIC_STRING("lt")>{};
+static constexpr inline auto gt = detail::compare_fn<std::greater<>, FERRUGO_STATIC_STRING("gt")>{};
+static constexpr inline auto le = detail::compare_fn<std::less_equal<>, FERRUGO_STATIC_STRING("le")>{};
+static constexpr inline auto ge = detail::compare_fn<std::greater_equal<>, FERRUGO_STATIC_STRING("ge")>{};
 
 static constexpr inline auto is_divisible_by = detail::is_divisible_by_fn{};
 static constexpr inline auto is_odd = detail::is_odd_fn{};
 static constexpr inline auto is_even = detail::is_even_fn{};
 
-static constexpr inline auto result_of = detail::result_of_fn<static_string<'r', 'e', 's', 'u', 'l', 't', '_', 'o', 'f'>>{};
-static constexpr inline auto field = detail::result_of_fn<static_string<'f', 'i', 'e', 'l', 'd'>>{};
-static constexpr inline auto property = detail::result_of_fn<static_string<'p', 'r', 'o', 'p', 'e', 'r', 't', 'y'>>{};
+static constexpr inline auto result_of = detail::result_of_fn<FERRUGO_STATIC_STRING("result_of")>{};
+static constexpr inline auto field = detail::result_of_fn<FERRUGO_STATIC_STRING("field")>{};
+static constexpr inline auto property = detail::result_of_fn<FERRUGO_STATIC_STRING("property")>{};
 
 static constexpr inline auto is_space = detail::is_space_fn{};
 static constexpr inline auto is_digit = detail::is_digit_fn{};

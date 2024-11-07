@@ -90,4 +90,5 @@ struct trim_result<static_string<'\0', Tail...>>
 
 #define FERRUGO_GET_SS(str) FERRUGO_GET_SS_64(str, 0)
 
-#define FERRUGO_STATIC_STRING(str) trim_result_t<string_t<FERRUGO_GET_SS(str)>>
+#define FERRUGO_STATIC_STRING(str) \
+    ::ferrugo::predicates::trim_result_t<::ferrugo::predicates::static_string<FERRUGO_GET_SS(str)>>
