@@ -9,7 +9,7 @@ namespace predicates
 {
 
 template <char... Ch>
-struct static_string
+struct str_t
 {
     static std::string_view str()
     {
@@ -22,7 +22,7 @@ struct static_string
         return str();
     }
 
-    friend std::ostream& operator<<(std::ostream& os, const static_string)
+    friend std::ostream& operator<<(std::ostream& os, const str_t)
     {
         return os << str();
     }
@@ -41,9 +41,9 @@ struct concat_result<T>
 };
 
 template <char... L, char... R>
-struct concat_result<static_string<L...>, static_string<R...>>
+struct concat_result<str_t<L...>, str_t<R...>>
 {
-    using type = static_string<L..., R...>;
+    using type = str_t<L..., R...>;
 };
 
 template <class A, class B, class... Tail>
@@ -62,33 +62,34 @@ template <class T>
 using trim_result_t = typename trim_result<T>::type;
 
 template <char L, char... R>
-struct trim_result<static_string<L, R...>>
+struct trim_result<str_t<L, R...>>
 {
-    using type = concat_result_t<static_string<L>, trim_result_t<static_string<R...>>>;
+    using type = concat_result_t<str_t<L>, trim_result_t<str_t<R...>>>;
 };
 
 template <char... Tail>
-struct trim_result<static_string<'\0', Tail...>>
+struct trim_result<str_t<'\0', Tail...>>
 {
-    using type = static_string<>;
+    using type = str_t<>;
 };
 
 }  // namespace predicates
 }  // namespace ferrugo
 
-#define FERRUGO_GET_SS_1(str, i) ((i) + 1 < sizeof(str) ? str[(i)] : '\0')
+#define FERRUGO_IMPL_GET_STR_1(str, i) ((i) + 1 < sizeof(str) ? str[(i)] : '\0')
 
-#define FERRUGO_GET_SS_4(str, i) \
-    FERRUGO_GET_SS_1(str, i + 0), FERRUGO_GET_SS_1(str, i + 1), FERRUGO_GET_SS_1(str, i + 2), FERRUGO_GET_SS_1(str, i + 3)
+#define FERRUGO_IMPL_GET_STR_4(str, i)                                                                          \
+    FERRUGO_IMPL_GET_STR_1(str, i + 0), FERRUGO_IMPL_GET_STR_1(str, i + 1), FERRUGO_IMPL_GET_STR_1(str, i + 2), \
+        FERRUGO_IMPL_GET_STR_1(str, i + 3)
 
-#define FERRUGO_GET_SS_16(str, i) \
-    FERRUGO_GET_SS_4(str, i + 0), FERRUGO_GET_SS_4(str, i + 4), FERRUGO_GET_SS_4(str, i + 8), FERRUGO_GET_SS_4(str, i + 12)
+#define FERRUGO_IMPL_GET_STR_16(str, i)                                                                         \
+    FERRUGO_IMPL_GET_STR_4(str, i + 0), FERRUGO_IMPL_GET_STR_4(str, i + 4), FERRUGO_IMPL_GET_STR_4(str, i + 8), \
+        FERRUGO_IMPL_GET_STR_4(str, i + 12)
 
-#define FERRUGO_GET_SS_64(str, i)                                                                  \
-    FERRUGO_GET_SS_16(str, i + 0), FERRUGO_GET_SS_16(str, i + 16), FERRUGO_GET_SS_16(str, i + 32), \
-        FERRUGO_GET_SS_16(str, i + 48)
+#define FERRUGO_GET_SS_64(str, i)                                                                                    \
+    FERRUGO_IMPL_GET_STR_16(str, i + 0), FERRUGO_IMPL_GET_STR_16(str, i + 16), FERRUGO_IMPL_GET_STR_16(str, i + 32), \
+        FERRUGO_IMPL_GET_STR_16(str, i + 48)
 
-#define FERRUGO_GET_SS(str) FERRUGO_GET_SS_64(str, 0)
+#define FERRUGO_GET_STR(str) FERRUGO_GET_SS_64(str, 0)
 
-#define FERRUGO_STATIC_STRING(str) \
-    ::ferrugo::predicates::trim_result_t<::ferrugo::predicates::static_string<FERRUGO_GET_SS(str)>>
+#define FERRUGO_STR_T(str) ::ferrugo::predicates::trim_result_t<::ferrugo::predicates::str_t<FERRUGO_GET_STR(str)>>
