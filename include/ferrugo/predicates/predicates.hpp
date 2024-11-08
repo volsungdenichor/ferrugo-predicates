@@ -4,7 +4,7 @@
 #include <ferrugo/core/source_location.hpp>
 #include <ferrugo/core/type_traits.hpp>
 #include <ferrugo/core/types.hpp>
-#include <ferrugo/predicates/static_string.hpp>
+#include <ferrugo/predicates/str_t.hpp>
 #include <functional>
 #include <optional>
 #include <sstream>
