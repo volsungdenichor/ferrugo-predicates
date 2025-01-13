@@ -49,6 +49,10 @@ constexpr bool invoke_pred(Pred&& pred, T&& item)
     {
         return pred == item;
     }
+    else
+    {
+        static_assert(ferrugo::core::always_false<T>::value, "type must be either equality comparable or invocable");
+    }
 }
 
 struct all_tag
@@ -123,17 +127,17 @@ struct negate_fn
     template <class Pred>
     struct impl
     {
-        Pred pred;
+        Pred m_pred;
 
         template <class U>
         bool operator()(U&& item) const
         {
-            return !invoke_pred(pred, std::forward<U>(item));
+            return !invoke_pred(m_pred, std::forward<U>(item));
         }
 
         friend std::ostream& operator<<(std::ostream& os, const impl& item)
         {
-            return os << "(not " << item.pred << ")";
+            return os << "(not " << item.m_pred << ")";
         }
     };
 
@@ -149,17 +153,27 @@ struct is_some_fn
     template <class Pred>
     struct impl
     {
-        Pred pred;
+        Pred m_pred;
 
         template <class U>
         bool operator()(U&& item) const
         {
-            return static_cast<bool>(item) && invoke_pred(pred, *std::forward<U>(item));
+            return static_cast<bool>(item) && invoke_pred(m_pred, *std::forward<U>(item));
+        }
+
+        bool operator()(nullptr_t) const
+        {
+            return false;
+        }
+
+        bool operator()(std::nullopt_t) const
+        {
+            return false;
         }
 
         friend std::ostream& operator<<(std::ostream& os, const impl& item)
         {
-            return os << "(is_some " << item.pred << ")";
+            return os << "(is_some " << item.m_pred << ")";
         }
     };
 
@@ -169,6 +183,16 @@ struct is_some_fn
         bool operator()(U&& item) const
         {
             return static_cast<bool>(item);
+        }
+
+        bool operator()(nullptr_t) const
+        {
+            return false;
+        }
+
+        bool operator()(std::nullopt_t) const
+        {
+            return false;
         }
 
         friend std::ostream& operator<<(std::ostream& os, const void_impl& item)
@@ -201,12 +225,12 @@ struct is_none_fn
 
         bool operator()(nullptr_t) const
         {
-            return false;
+            return true;
         }
 
         bool operator()(std::nullopt_t) const
         {
-            return false;
+            return true;
         }
 
         friend std::ostream& operator<<(std::ostream& os, const impl& item)
@@ -227,19 +251,19 @@ struct compare_fn
     template <class T>
     struct impl
     {
-        T value;
+        T m_value;
 
         template <class U>
         bool operator()(U&& item) const
         {
             static const auto op = Op{};
-            return op(std::forward<U>(item), value);
+            return op(std::forward<U>(item), m_value);
         }
 
         friend std::ostream& operator<<(std::ostream& os, const impl& item)
         {
             static const auto name = Name{};
-            return os << "(" << name << " " << item.value << ")";
+            return os << "(" << name << " " << item.m_value << ")";
         }
     };
 
@@ -255,17 +279,17 @@ struct size_is_fn
     template <class Pred>
     struct impl
     {
-        Pred pred;
+        Pred m_pred;
 
         template <class U>
         bool operator()(U&& item) const
         {
-            return invoke_pred(pred, std::distance(std::begin(item), std::end(item)));
+            return invoke_pred(m_pred, std::distance(std::begin(item), std::end(item)));
         }
 
         friend std::ostream& operator<<(std::ostream& os, const impl& item)
         {
-            return os << "(size_is " << item.pred << ")";
+            return os << "(size_is " << item.m_pred << ")";
         }
     };
 
@@ -303,18 +327,20 @@ struct each_fn
     template <class Pred>
     struct impl
     {
-        Pred pred;
+        Pred m_pred;
 
         template <class U>
         bool operator()(U&& item) const
         {
             return std::all_of(
-                std::begin(item), std::end(item), [&](auto&& v) { return invoke_pred(pred, std::forward<decltype(v)>(v)); });
+                std::begin(item),
+                std::end(item),
+                [&](auto&& v) { return invoke_pred(m_pred, std::forward<decltype(v)>(v)); });
         }
 
         friend std::ostream& operator<<(std::ostream& os, const impl& item)
         {
-            return os << "(each " << item.pred << ")";
+            return os << "(each " << item.m_pred << ")";
         }
     };
 
@@ -330,18 +356,20 @@ struct contains_fn
     template <class Pred>
     struct impl
     {
-        Pred pred;
+        Pred m_pred;
 
         template <class U>
         bool operator()(U&& item) const
         {
             return std::any_of(
-                std::begin(item), std::end(item), [&](auto&& v) { return invoke_pred(pred, std::forward<decltype(v)>(v)); });
+                std::begin(item),
+                std::end(item),
+                [&](auto&& v) { return invoke_pred(m_pred, std::forward<decltype(v)>(v)); });
         }
 
         friend std::ostream& operator<<(std::ostream& os, const impl& item)
         {
-            return os << "(contains " << item.pred << ")";
+            return os << "(contains " << item.m_pred << ")";
         }
     };
 
@@ -687,6 +715,32 @@ struct result_of_fn
     }
 };
 
+struct approx_eq_fn
+{
+    template <class T>
+    struct impl
+    {
+        T m_value;
+
+        template <class U>
+        bool operator()(U&& item) const
+        {
+            return std::abs(item - m_value) < std::numeric_limits<T>::epsilon();
+        }
+
+        friend std::ostream& operator<<(std::ostream& os, const impl& item)
+        {
+            return os << "(approx_eq " << item.m_value << ")";
+        }
+    };
+
+    template <class T>
+    auto operator()(T value) const -> impl<T>
+    {
+        return impl{ value };
+    }
+};
+
 struct is_divisible_by_fn
 {
     struct impl
@@ -877,7 +931,7 @@ struct is_lower_fn
 };
 
 template <std::size_t N>
-struct element_fn
+struct field_at_fn
 {
     template <class Pred>
     struct impl
@@ -937,6 +991,34 @@ struct fields_are_fn
     auto operator()(Preds&&... preds) const -> impl<std::decay_t<Preds>...>
     {
         return impl<std::decay_t<Preds>...>{ { std::forward<Preds>(preds)... } };
+    }
+};
+
+template <class T>
+struct variant_with_fn
+{
+    template <class Pred>
+    struct impl
+    {
+        Pred pred;
+
+        template <class U>
+        bool operator()(U&& item) const
+        {
+            const auto ptr = std::get_if<T>(&item);
+            return ptr && invoke_pred(pred, *ptr);
+        }
+
+        friend std::ostream& operator<<(std::ostream& os, const impl& item)
+        {
+            return os << "(variant_with " << core::type_name<T>() << " " << item.pred << ")";
+        }
+    };
+
+    template <class Pred>
+    auto operator()(Pred&& pred) const -> impl<std::decay_t<Pred>>
+    {
+        return impl<std::decay_t<Pred>>{ std::forward<Pred>(pred) };
     }
 };
 
@@ -1007,6 +1089,7 @@ static constexpr inline auto gt = detail::compare_fn<std::greater<>, FERRUGO_STR
 static constexpr inline auto le = detail::compare_fn<std::less_equal<>, FERRUGO_STR_T("le")>{};
 static constexpr inline auto ge = detail::compare_fn<std::greater_equal<>, FERRUGO_STR_T("ge")>{};
 
+static constexpr inline auto approx_eq = detail::approx_eq_fn{};
 static constexpr inline auto is_divisible_by = detail::is_divisible_by_fn{};
 static constexpr inline auto is_odd = detail::is_odd_fn{};
 static constexpr inline auto is_even = detail::is_even_fn{};
@@ -1023,9 +1106,12 @@ static constexpr inline auto is_upper = detail::is_upper_fn{};
 static constexpr inline auto is_lower = detail::is_lower_fn{};
 
 template <std::size_t N>
-static constexpr inline auto element = detail::element_fn<N>{};
+static constexpr inline auto field_at = detail::field_at_fn<N>{};
 
 static constexpr inline auto fields_are = detail::fields_are_fn{};
+
+template <class T>
+static constexpr inline auto variant_with = detail::variant_with_fn<T>{};
 
 }  // namespace predicates
 }  // namespace ferrugo

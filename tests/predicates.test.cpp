@@ -473,7 +473,7 @@ TEST_CASE("predicates - fields_are", "")
 
 TEST_CASE("predicates - element", "")
 {
-    const auto pred = predicates::element<1>(predicates::ge(5));
+    const auto pred = predicates::field_at<1>(predicates::ge(5));
     REQUIRE_THAT(  //
         core::str(pred),
         matchers::equal_to("(element 1 (ge 5))"sv));
@@ -482,4 +482,17 @@ TEST_CASE("predicates - element", "")
     REQUIRE_THAT(pred(std::tuple{ ' ', 6, ' ' }), matchers::equal_to(true));
 
     REQUIRE_THAT(pred(std::tuple{ ' ', 4, ' ' }), matchers::equal_to(false));
+}
+
+TEST_CASE("predicates - variant_with", "")
+{
+    const auto pred = predicates::variant_with<int>(predicates::ge(10));
+    REQUIRE_THAT(  //
+        core::str(pred),
+        matchers::equal_to("(variant_with int (ge 10))"sv));
+
+    REQUIRE_THAT(pred(std::variant<int, std::string>{ 20 }), matchers::equal_to(true));
+    REQUIRE_THAT(pred(std::variant<int, std::string>{ 10 }), matchers::equal_to(true));
+    REQUIRE_THAT(pred(std::variant<int, std::string>{ 5 }), matchers::equal_to(false));
+    REQUIRE_THAT(pred(std::variant<int, std::string>{ "ABC" }), matchers::equal_to(false));
 }
