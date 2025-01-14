@@ -322,7 +322,7 @@ struct is_empty_fn
     }
 };
 
-struct each_fn
+struct each_item_fn
 {
     template <class Pred>
     struct impl
@@ -351,7 +351,7 @@ struct each_fn
     }
 };
 
-struct contains_fn
+struct contains_item_fn
 {
     template <class Pred>
     struct impl
@@ -384,7 +384,7 @@ struct items_are
 {
 };
 
-struct elements_are_fn
+struct items_are_fn
 {
     template <std::size_t N = 0, class... Preds, class Iter>
     static bool call(const std::tuple<Preds...>& preds, Iter begin, Iter end)
@@ -427,7 +427,7 @@ struct elements_are_fn
     }
 };
 
-struct elements_are_array_fn
+struct items_are_array_fn
 {
     template <class PIter, class Iter>
     static bool call(PIter p_b, PIter p_e, Iter begin, Iter end)
@@ -459,7 +459,7 @@ struct elements_are_array_fn
     }
 };
 
-struct starts_with_elements_fn
+struct starts_with_items_fn
 {
     template <class... Preds>
     struct impl
@@ -473,7 +473,7 @@ struct starts_with_elements_fn
             const auto e = std::end(unwrap(item));
             const auto preds_count = sizeof...(Preds);
             const auto size = std::distance(b, e);
-            return size >= preds_count && elements_are_fn ::call(m_preds, b, std::next(b, preds_count));
+            return size >= preds_count && items_are_fn ::call(m_preds, b, std::next(b, preds_count));
         }
 
         friend std::ostream& operator<<(std::ostream& os, const impl& item)
@@ -510,7 +510,7 @@ struct starts_with_array_fn
             const auto e = std::end(unwrap(item));
             const auto preds_count = std::distance(p_b, p_e);
             const auto size = std::distance(b, e);
-            return size >= preds_count && elements_are_array_fn::call(p_b, p_e, b, std::next(b, preds_count));
+            return size >= preds_count && items_are_array_fn::call(p_b, p_e, b, std::next(b, preds_count));
         }
 
         friend std::ostream& operator<<(std::ostream& os, const impl& item)
@@ -527,7 +527,7 @@ struct starts_with_array_fn
     }
 };
 
-struct ends_with_elements_fn
+struct ends_with_items_fn
 {
     template <class... Preds>
     struct impl
@@ -541,7 +541,7 @@ struct ends_with_elements_fn
             const auto e = std::end(unwrap(item));
             const auto preds_count = sizeof...(Preds);
             const auto size = std::distance(b, e);
-            return size >= preds_count && elements_are_fn::call(m_preds, std::next(b, size - preds_count), e);
+            return size >= preds_count && items_are_fn::call(m_preds, std::next(b, size - preds_count), e);
         }
 
         friend std::ostream& operator<<(std::ostream& os, const impl& item)
@@ -578,7 +578,7 @@ struct ends_with_array_fn
             const auto e = std::end(unwrap(item));
             const auto preds_count = std::distance(p_b, p_e);
             const auto size = std::distance(b, e);
-            return size >= preds_count && elements_are_array_fn::call(p_b, p_e, std::next(b, size - preds_count), e);
+            return size >= preds_count && items_are_array_fn::call(p_b, p_e, std::next(b, size - preds_count), e);
         }
 
         friend std::ostream& operator<<(std::ostream& os, const impl& item)
@@ -595,7 +595,7 @@ struct ends_with_array_fn
     }
 };
 
-struct contains_elements_fn
+struct contains_items_fn
 {
     template <class... Preds>
     struct impl
@@ -615,7 +615,7 @@ struct contains_elements_fn
             }
             for (std::size_t i = 0; i < size - preds_count + 1; ++i)
             {
-                if (elements_are_fn::call(m_preds, std::next(b, i), std::next(b, i + preds_count)))
+                if (items_are_fn::call(m_preds, std::next(b, i), std::next(b, i + preds_count)))
                 {
                     return true;
                 }
@@ -663,7 +663,7 @@ struct contains_array_fn
             }
             for (std::size_t i = 0; i < size - preds_count + 1; ++i)
             {
-                if (elements_are_array_fn::call(p_b, p_e, std::next(b, i), std::next(b, i + preds_count)))
+                if (items_are_array_fn::call(p_b, p_e, std::next(b, i), std::next(b, i + preds_count)))
                 {
                     return true;
                 }
@@ -1068,18 +1068,18 @@ static constexpr inline auto negate = detail::negate_fn{};
 static constexpr inline auto is_some = detail::is_some_fn{};
 static constexpr inline auto is_none = detail::is_none_fn{};
 
-static constexpr inline auto each_item = detail::each_fn{};
-static constexpr inline auto contains_item = detail::contains_fn{};
+static constexpr inline auto each_item = detail::each_item_fn{};
+static constexpr inline auto contains_item = detail::contains_item_fn{};
 static constexpr inline auto size_is = detail::size_is_fn{};
 static constexpr inline auto is_empty = detail::is_empty_fn{};
 
-static constexpr inline auto items_are = detail::elements_are_fn{};
-static constexpr inline auto items_are_array = detail::elements_are_array_fn{};
-static constexpr inline auto starts_with_items = detail::starts_with_elements_fn{};
+static constexpr inline auto items_are = detail::items_are_fn{};
+static constexpr inline auto items_are_array = detail::items_are_array_fn{};
+static constexpr inline auto starts_with_items = detail::starts_with_items_fn{};
 static constexpr inline auto starts_with_array = detail::starts_with_array_fn{};
-static constexpr inline auto ends_with_items = detail::ends_with_elements_fn{};
+static constexpr inline auto ends_with_items = detail::ends_with_items_fn{};
 static constexpr inline auto ends_with_array = detail::ends_with_array_fn{};
-static constexpr inline auto contains_items = detail::contains_elements_fn{};
+static constexpr inline auto contains_items = detail::contains_items_fn{};
 static constexpr inline auto contains_array = detail::contains_array_fn{};
 
 static constexpr inline auto eq = detail::compare_fn<std::equal_to<>, FERRUGO_STR_T("eq")>{};
