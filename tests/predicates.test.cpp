@@ -496,3 +496,24 @@ TEST_CASE("predicates - variant_with", "")
     REQUIRE_THAT(pred(std::variant<int, std::string>{ 5 }), matchers::equal_to(false));
     REQUIRE_THAT(pred(std::variant<int, std::string>{ "ABC" }), matchers::equal_to(false));
 }
+
+TEST_CASE("predicates - string_is case_sensitive", "")
+{
+    const auto pred = predicates::string_is("ABC", predicates::string_comparison::case_sensitive);
+    REQUIRE_THAT(  //
+        core::str(pred),
+        matchers::equal_to("(string_is case_sensitive \"ABC\")"sv));
+    REQUIRE_THAT(pred("ABC"), matchers::equal_to(true));
+    REQUIRE_THAT(pred("ABCD"), matchers::equal_to(false));
+}
+
+TEST_CASE("predicates - string_is case_insensitive", "")
+{
+    const auto pred = predicates::string_is("ABC", predicates::string_comparison::case_insensitive);
+    REQUIRE_THAT(  //
+        core::str(pred),
+        matchers::equal_to("(string_is case_insensitive \"ABC\")"sv));
+    REQUIRE_THAT(pred("ABC"), matchers::equal_to(true));
+    REQUIRE_THAT(pred("Abc"), matchers::equal_to(true));
+    REQUIRE_THAT(pred("ABCD"), matchers::equal_to(false));
+}
