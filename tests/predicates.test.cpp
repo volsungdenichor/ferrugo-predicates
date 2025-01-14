@@ -24,11 +24,11 @@ TEST_CASE("predicates - format", "")
         core::str(predicates::negate(predicates::any(1, 2, 3))),
         matchers::equal_to("(not (any 1 2 3))"sv));
     REQUIRE_THAT(  //
-        core::str(predicates::each(predicates::any(1, 2, 3))),
-        matchers::equal_to("(each (any 1 2 3))"sv));
+        core::str(predicates::each_item(predicates::any(1, 2, 3))),
+        matchers::equal_to("(each_item (any 1 2 3))"sv));
     REQUIRE_THAT(  //
-        core::str(predicates::contains(predicates::any(1, 2, 3))),
-        matchers::equal_to("(contains (any 1 2 3))"sv));
+        core::str(predicates::contains_item(predicates::any(1, 2, 3))),
+        matchers::equal_to("(contains_item (any 1 2 3))"sv));
     REQUIRE_THAT(  //
         core::str(predicates::size_is(predicates::lt(8))),
         matchers::equal_to("(size_is (lt 8))"sv));
@@ -192,60 +192,60 @@ TEST_CASE("predicates - size_is", "")
     REQUIRE_THAT(pred("###"sv), matchers::equal_to(false));
 }
 
-TEST_CASE("predicates - each", "")
+TEST_CASE("predicates - each_item", "")
 {
-    const auto pred = predicates::each('#');
+    const auto pred = predicates::each_item('#');
     REQUIRE_THAT(  //
         core::str(pred),
-        matchers::equal_to("(each #)"sv));
+        matchers::equal_to("(each_item #)"sv));
     REQUIRE_THAT(pred(""sv), matchers::equal_to(true));
     REQUIRE_THAT(pred("#"sv), matchers::equal_to(true));
     REQUIRE_THAT(pred("##"sv), matchers::equal_to(true));
     REQUIRE_THAT(pred("##__"sv), matchers::equal_to(false));
 }
 
-TEST_CASE("predicates - contains", "")
+TEST_CASE("predicates - contains_item", "")
 {
-    const auto pred = predicates::contains('#');
+    const auto pred = predicates::contains_item('#');
     REQUIRE_THAT(  //
         core::str(pred),
-        matchers::equal_to("(contains #)"sv));
+        matchers::equal_to("(contains_item #)"sv));
     REQUIRE_THAT(pred(""sv), matchers::equal_to(false));
     REQUIRE_THAT(pred("#"sv), matchers::equal_to(true));
     REQUIRE_THAT(pred("##"sv), matchers::equal_to(true));
     REQUIRE_THAT(pred("__"sv), matchers::equal_to(false));
 }
 
-TEST_CASE("predicates - elements_are", "")
+TEST_CASE("predicates - items_are", "")
 {
-    const auto pred = predicates::elements_are(0, predicates::ge(3), predicates::le(5), 10);
+    const auto pred = predicates::items_are(0, predicates::ge(3), predicates::le(5), 10);
     REQUIRE_THAT(  //
         core::str(pred),
-        matchers::equal_to("(elements_are 0 (ge 3) (le 5) 10)"sv));
+        matchers::equal_to("(items_are 0 (ge 3) (le 5) 10)"sv));
     REQUIRE_THAT(pred(std::vector{ 0, 3, 5, 10 }), matchers::equal_to(true));
     REQUIRE_THAT(pred(std::vector{ 0, 4, 4, 10 }), matchers::equal_to(true));
     REQUIRE_THAT(pred(std::vector{ 0, 3, 5, 10, 100 }), matchers::equal_to(false));
     REQUIRE_THAT(pred(std::vector{ 0, 3, 5 }), matchers::equal_to(false));
 }
 
-TEST_CASE("predicates - elements_are_array", "")
+TEST_CASE("predicates - items_are_array", "")
 {
-    const auto pred = predicates::elements_are_array(std::vector{ 1, 3, 5 });
+    const auto pred = predicates::items_are_array(std::vector{ 1, 3, 5 });
     // REQUIRE_THAT(  //
     //     core::str(pred),
-    //     matchers::equal_to("(elements_are 0 (ge 3) (le 5) 10)"sv));
+    //     matchers::equal_to("(items_are 0 (ge 3) (le 5) 10)"sv));
     REQUIRE_THAT(pred(std::vector{ 1, 3, 5 }), matchers::equal_to(true));
     REQUIRE_THAT(pred(std::vector{ 1, 3, 5, 10 }), matchers::equal_to(false));
     REQUIRE_THAT(pred(std::vector{ 1, 3 }), matchers::equal_to(false));
     REQUIRE_THAT(pred(std::vector{ 2, 2, 5 }), matchers::equal_to(false));
 }
 
-TEST_CASE("predicates - starts_with_elements", "")
+TEST_CASE("predicates - starts_with_items", "")
 {
-    const auto pred = predicates::starts_with_elements(0, predicates::ge(3), predicates::le(5), 10);
+    const auto pred = predicates::starts_with_items(0, predicates::ge(3), predicates::le(5), 10);
     REQUIRE_THAT(  //
         core::str(pred),
-        matchers::equal_to("(starts_with_elements 0 (ge 3) (le 5) 10)"sv));
+        matchers::equal_to("(starts_with_items 0 (ge 3) (le 5) 10)"sv));
     REQUIRE_THAT(pred(std::vector{ 0, 3, 5, 10 }), matchers::equal_to(true));
     REQUIRE_THAT(pred(std::vector{ 0, 3, 5, 10, 100 }), matchers::equal_to(true));
     REQUIRE_THAT(pred(std::vector{ 0, 4, 4, 10 }), matchers::equal_to(true));
@@ -257,19 +257,19 @@ TEST_CASE("predicates - starts_with_array", "")
     const auto pred = predicates::starts_with_array(std::vector{ 1, 3, 5 });
     // REQUIRE_THAT(  //
     //     core::str(pred),
-    //     matchers::equal_to("(elements_are 0 (ge 3) (le 5) 10)"sv));
+    //     matchers::equal_to("(items_are 0 (ge 3) (le 5) 10)"sv));
     REQUIRE_THAT(pred(std::vector{ 1, 3, 5 }), matchers::equal_to(true));
     REQUIRE_THAT(pred(std::vector{ 1, 3, 5, 10 }), matchers::equal_to(true));
     REQUIRE_THAT(pred(std::vector{ 1, 3 }), matchers::equal_to(false));
     REQUIRE_THAT(pred(std::vector{ 2, 2, 5 }), matchers::equal_to(false));
 }
 
-TEST_CASE("predicates - ends_with_elements", "")
+TEST_CASE("predicates - ends_with_items", "")
 {
-    const auto pred = predicates::ends_with_elements(0, predicates::ge(3), predicates::le(5), 10);
+    const auto pred = predicates::ends_with_items(0, predicates::ge(3), predicates::le(5), 10);
     REQUIRE_THAT(  //
         core::str(pred),
-        matchers::equal_to("(ends_with_elements 0 (ge 3) (le 5) 10)"sv));
+        matchers::equal_to("(ends_with_items 0 (ge 3) (le 5) 10)"sv));
     REQUIRE_THAT(pred(std::vector{ 0, 3, 5, 10 }), matchers::equal_to(true));
     REQUIRE_THAT(pred(std::vector{ 100, 99, 0, 3, 5, 10 }), matchers::equal_to(true));
     REQUIRE_THAT(pred(std::vector{ 0, 4, 4, 10 }), matchers::equal_to(true));
@@ -281,19 +281,19 @@ TEST_CASE("predicates - ends_with_array", "")
     const auto pred = predicates::ends_with_array(std::vector{ 1, 3, 5 });
     // REQUIRE_THAT(  //
     //     core::str(pred),
-    //     matchers::equal_to("(elements_are 0 (ge 3) (le 5) 10)"sv));
+    //     matchers::equal_to("(items_are 0 (ge 3) (le 5) 10)"sv));
     REQUIRE_THAT(pred(std::vector{ 1, 3, 5 }), matchers::equal_to(true));
     REQUIRE_THAT(pred(std::vector{ 10, 1, 3, 5 }), matchers::equal_to(true));
     REQUIRE_THAT(pred(std::vector{ 3, 5 }), matchers::equal_to(false));
     REQUIRE_THAT(pred(std::vector{ 2, 2, 5 }), matchers::equal_to(false));
 }
 
-TEST_CASE("predicates - contains_elements", "")
+TEST_CASE("predicates - contains_items", "")
 {
-    const auto pred = predicates::contains_elements(0, predicates::ge(3), predicates::le(5), 10);
+    const auto pred = predicates::contains_items(0, predicates::ge(3), predicates::le(5), 10);
     REQUIRE_THAT(  //
         core::str(pred),
-        matchers::equal_to("(contains_elements 0 (ge 3) (le 5) 10)"sv));
+        matchers::equal_to("(contains_items 0 (ge 3) (le 5) 10)"sv));
     REQUIRE_THAT(pred(std::vector{ 0, 3, 5, 10 }), matchers::equal_to(true));
     REQUIRE_THAT(pred(std::vector{ 100, 99, 0, 3, 5, 10 }), matchers::equal_to(true));
     REQUIRE_THAT(pred(std::vector{ 100, 99, 0, 3, 5, 10, 200 }), matchers::equal_to(true));
@@ -306,7 +306,7 @@ TEST_CASE("predicates - contains_array", "")
     const auto pred = predicates::contains_array(std::vector{ 1, 3, 5 });
     // REQUIRE_THAT(  //
     //     core::str(pred),
-    //     matchers::equal_to("(elements_are 0 (ge 3) (le 5) 10)"sv));
+    //     matchers::equal_to("(items_are 0 (ge 3) (le 5) 10)"sv));
     REQUIRE_THAT(pred(std::vector{ 1, 3, 5 }), matchers::equal_to(true));
     REQUIRE_THAT(pred(std::vector{ 10, 1, 3, 5 }), matchers::equal_to(true));
     REQUIRE_THAT(pred(std::vector{ 10, 1, 3, 5, 20 }), matchers::equal_to(true));
@@ -459,12 +459,12 @@ TEST_CASE("predicates - is_lower", "")
     REQUIRE_THAT(pred('A'), matchers::equal_to(false));
 }
 
-TEST_CASE("predicates - fields_are", "")
+TEST_CASE("predicates - elements_are", "")
 {
-    const auto pred = predicates::fields_are(predicates::ge(10), predicates::eq('X'), predicates::contains('_'));
+    const auto pred = predicates::elements_are(predicates::ge(10), predicates::eq('X'), predicates::contains_item('_'));
     REQUIRE_THAT(  //
         core::str(pred),
-        matchers::equal_to("(fields_are (ge 10) (eq X) (contains _))"sv));
+        matchers::equal_to("(elements_are (ge 10) (eq X) (contains_item _))"sv));
     REQUIRE_THAT(pred(std::tuple{ 10, 'X', "12_"sv }), matchers::equal_to(true));
     REQUIRE_THAT(pred(std::tuple{ 15, 'X', "_"sv }), matchers::equal_to(true));
 
@@ -473,7 +473,7 @@ TEST_CASE("predicates - fields_are", "")
 
 TEST_CASE("predicates - element", "")
 {
-    const auto pred = predicates::field_at<1>(predicates::ge(5));
+    const auto pred = predicates::element<1>(predicates::ge(5));
     REQUIRE_THAT(  //
         core::str(pred),
         matchers::equal_to("(element 1 (ge 5))"sv));

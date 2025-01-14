@@ -340,7 +340,7 @@ struct each_fn
 
         friend std::ostream& operator<<(std::ostream& os, const impl& item)
         {
-            return os << "(each " << item.m_pred << ")";
+            return os << "(each_item " << item.m_pred << ")";
         }
     };
 
@@ -369,7 +369,7 @@ struct contains_fn
 
         friend std::ostream& operator<<(std::ostream& os, const impl& item)
         {
-            return os << "(contains " << item.m_pred << ")";
+            return os << "(contains_item " << item.m_pred << ")";
         }
     };
 
@@ -380,7 +380,7 @@ struct contains_fn
     }
 };
 
-struct elements_are
+struct items_are
 {
 };
 
@@ -412,7 +412,7 @@ struct elements_are_fn
         friend std::ostream& operator<<(std::ostream& os, const impl& item)
         {
             os << "("
-               << "elements_are";
+               << "items_are";
             std::apply(
                 [&](const auto&... preds) { ((os << " " << ::ferrugo::core::safe_format(preds)), ...); }, item.m_preds);
             os << ")";
@@ -448,7 +448,7 @@ struct elements_are_array_fn
         friend std::ostream& operator<<(std::ostream& os, const impl& item)
         {
             return os << "("
-                      << "elements_are_array " << ::ferrugo::core::safe_format(item.m_range) << ")";
+                      << "items_are_array " << ::ferrugo::core::safe_format(item.m_range) << ")";
         }
     };
 
@@ -479,7 +479,7 @@ struct starts_with_elements_fn
         friend std::ostream& operator<<(std::ostream& os, const impl& item)
         {
             os << "("
-               << "starts_with_elements";
+               << "starts_with_items";
             std::apply(
                 [&](const auto&... preds) { ((os << " " << ::ferrugo::core::safe_format(preds)), ...); }, item.m_preds);
             os << ")";
@@ -547,7 +547,7 @@ struct ends_with_elements_fn
         friend std::ostream& operator<<(std::ostream& os, const impl& item)
         {
             os << "("
-               << "ends_with_elements";
+               << "ends_with_items";
             std::apply(
                 [&](const auto&... preds) { ((os << " " << ::ferrugo::core::safe_format(preds)), ...); }, item.m_preds);
             os << ")";
@@ -626,7 +626,7 @@ struct contains_elements_fn
         friend std::ostream& operator<<(std::ostream& os, const impl& item)
         {
             os << "("
-               << "contains_elements";
+               << "contains_items";
             std::apply(
                 [&](const auto&... preds) { ((os << " " << ::ferrugo::core::safe_format(preds)), ...); }, item.m_preds);
             os << ")";
@@ -979,7 +979,7 @@ struct fields_are_fn
         friend std::ostream& operator<<(std::ostream& os, const impl& item)
         {
             os << "("
-               << "fields_are";
+               << "elements_are";
             std::apply(
                 [&](const auto&... preds) { ((os << " " << ::ferrugo::core::safe_format(preds)), ...); }, item.m_preds);
             os << ")";
@@ -1068,18 +1068,18 @@ static constexpr inline auto negate = detail::negate_fn{};
 static constexpr inline auto is_some = detail::is_some_fn{};
 static constexpr inline auto is_none = detail::is_none_fn{};
 
-static constexpr inline auto each = detail::each_fn{};
-static constexpr inline auto contains = detail::contains_fn{};
+static constexpr inline auto each_item = detail::each_fn{};
+static constexpr inline auto contains_item = detail::contains_fn{};
 static constexpr inline auto size_is = detail::size_is_fn{};
 static constexpr inline auto is_empty = detail::is_empty_fn{};
 
-static constexpr inline auto elements_are = detail::elements_are_fn{};
-static constexpr inline auto elements_are_array = detail::elements_are_array_fn{};
-static constexpr inline auto starts_with_elements = detail::starts_with_elements_fn{};
+static constexpr inline auto items_are = detail::elements_are_fn{};
+static constexpr inline auto items_are_array = detail::elements_are_array_fn{};
+static constexpr inline auto starts_with_items = detail::starts_with_elements_fn{};
 static constexpr inline auto starts_with_array = detail::starts_with_array_fn{};
-static constexpr inline auto ends_with_elements = detail::ends_with_elements_fn{};
+static constexpr inline auto ends_with_items = detail::ends_with_elements_fn{};
 static constexpr inline auto ends_with_array = detail::ends_with_array_fn{};
-static constexpr inline auto contains_elements = detail::contains_elements_fn{};
+static constexpr inline auto contains_items = detail::contains_elements_fn{};
 static constexpr inline auto contains_array = detail::contains_array_fn{};
 
 static constexpr inline auto eq = detail::compare_fn<std::equal_to<>, FERRUGO_STR_T("eq")>{};
@@ -1106,9 +1106,9 @@ static constexpr inline auto is_upper = detail::is_upper_fn{};
 static constexpr inline auto is_lower = detail::is_lower_fn{};
 
 template <std::size_t N>
-static constexpr inline auto field_at = detail::field_at_fn<N>{};
+static constexpr inline auto element = detail::field_at_fn<N>{};
 
-static constexpr inline auto fields_are = detail::fields_are_fn{};
+static constexpr inline auto elements_are = detail::fields_are_fn{};
 
 template <class T>
 static constexpr inline auto variant_with = detail::variant_with_fn<T>{};
