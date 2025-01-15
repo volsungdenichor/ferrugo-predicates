@@ -517,3 +517,67 @@ TEST_CASE("predicates - string_is case_insensitive", "")
     REQUIRE_THAT(pred("Abc"), matchers::equal_to(true));
     REQUIRE_THAT(pred("ABCD"), matchers::equal_to(false));
 }
+
+TEST_CASE("predicates - string_starts_with case_sensitive", "")
+{
+    const auto pred = predicates::string_starts_with("ABC", predicates::string_comparison::case_sensitive);
+    REQUIRE_THAT(  //
+        core::str(pred),
+        matchers::equal_to("(string_starts_with case_sensitive \"ABC\")"sv));
+
+    REQUIRE_THAT(pred("ABC"), matchers::equal_to(true));
+    REQUIRE_THAT(pred("ABCd"), matchers::equal_to(true));
+    REQUIRE_THAT(pred("ABCD"), matchers::equal_to(true));
+
+    REQUIRE_THAT(pred("AB"), matchers::equal_to(false));
+    REQUIRE_THAT(pred("XYZ"), matchers::equal_to(false));
+}
+
+TEST_CASE("predicates - string_starts_with case_insensitive", "")
+{
+    const auto pred = predicates::string_starts_with("ABC", predicates::string_comparison::case_insensitive);
+    REQUIRE_THAT(  //
+        core::str(pred),
+        matchers::equal_to("(string_starts_with case_insensitive \"ABC\")"sv));
+
+    REQUIRE_THAT(pred("ABC"), matchers::equal_to(true));
+    REQUIRE_THAT(pred("ABCd"), matchers::equal_to(true));
+    REQUIRE_THAT(pred("abcd"), matchers::equal_to(true));
+    REQUIRE_THAT(pred("ABCD"), matchers::equal_to(true));
+
+    REQUIRE_THAT(pred("AB"), matchers::equal_to(false));
+    REQUIRE_THAT(pred("ab"), matchers::equal_to(false));
+    REQUIRE_THAT(pred("XYZ"), matchers::equal_to(false));
+}
+
+TEST_CASE("predicates - string_ends_with case_sensitive", "")
+{
+    const auto pred = predicates::string_ends_with("ABC", predicates::string_comparison::case_sensitive);
+    REQUIRE_THAT(  //
+        core::str(pred),
+        matchers::equal_to("(string_ends_with case_sensitive \"ABC\")"sv));
+
+    REQUIRE_THAT(pred("ABC"), matchers::equal_to(true));
+    REQUIRE_THAT(pred("_ABC"), matchers::equal_to(true));
+    REQUIRE_THAT(pred("xyzABC"), matchers::equal_to(true));
+
+    REQUIRE_THAT(pred("AB"), matchers::equal_to(false));
+    REQUIRE_THAT(pred("XYZ"), matchers::equal_to(false));
+}
+
+TEST_CASE("predicates - string_ends_with case_insensitive", "")
+{
+    const auto pred = predicates::string_ends_with("ABC", predicates::string_comparison::case_insensitive);
+    REQUIRE_THAT(  //
+        core::str(pred),
+        matchers::equal_to("(string_ends_with case_insensitive \"ABC\")"sv));
+
+    REQUIRE_THAT(pred("ABC"), matchers::equal_to(true));
+    REQUIRE_THAT(pred("xABC"), matchers::equal_to(true));
+    REQUIRE_THAT(pred("xabc"), matchers::equal_to(true));
+    REQUIRE_THAT(pred("xyzAbc"), matchers::equal_to(true));
+
+    REQUIRE_THAT(pred("AB"), matchers::equal_to(false));
+    REQUIRE_THAT(pred("ab"), matchers::equal_to(false));
+    REQUIRE_THAT(pred("XYZ"), matchers::equal_to(false));
+}

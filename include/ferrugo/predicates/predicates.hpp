@@ -1078,6 +1078,66 @@ struct string_is_fn
     }
 };
 
+struct string_starts_with_fn
+{
+    struct impl
+    {
+        std::string m_expected;
+        string_comparison m_comparison;
+
+        bool operator()(std::string_view actual) const
+        {
+            return actual.size() >= m_expected.size()
+                   && std::equal(
+                       std::begin(actual),
+                       std::next(std::begin(actual), m_expected.size()),
+                       std::begin(m_expected),
+                       std::end(m_expected),
+                       compare_characters(m_comparison));
+        }
+
+        friend std::ostream& operator<<(std::ostream& os, const impl& item)
+        {
+            return os << "(string_starts_with " << item.m_comparison << " \"" << item.m_expected << "\")";
+        }
+    };
+
+    auto operator()(std::string expected, string_comparison comparison) const
+    {
+        return impl{ std::move(expected), comparison };
+    }
+};
+
+struct string_ends_with_fn
+{
+    struct impl
+    {
+        std::string m_expected;
+        string_comparison m_comparison;
+
+        bool operator()(std::string_view actual) const
+        {
+            return actual.size() >= m_expected.size()
+                   && std::equal(
+                       std::next(std::begin(actual), actual.size() - m_expected.size()),
+                       std::end(actual),
+                       std::begin(m_expected),
+                       std::end(m_expected),
+                       compare_characters(m_comparison));
+        }
+
+        friend std::ostream& operator<<(std::ostream& os, const impl& item)
+        {
+            return os << "(string_ends_with " << item.m_comparison << " \"" << item.m_expected << "\")";
+        }
+    };
+
+    auto operator()(std::string expected, string_comparison comparison) const
+    {
+        return impl{ std::move(expected), comparison };
+    }
+};
+
 }  // namespace detail
 
 template <class T>
@@ -1139,6 +1199,8 @@ static constexpr inline auto contains_items = detail::contains_items_fn{};
 static constexpr inline auto contains_array = detail::contains_array_fn{};
 
 static constexpr inline auto string_is = detail::string_is_fn{};
+static constexpr inline auto string_starts_with = detail::string_starts_with_fn{};
+static constexpr inline auto string_ends_with = detail::string_ends_with_fn{};
 
 static constexpr inline auto eq = detail::compare_fn<std::equal_to<>, FERRUGO_STR_T("eq")>{};
 static constexpr inline auto ne = detail::compare_fn<std::not_equal_to<>, FERRUGO_STR_T("ne")>{};
