@@ -581,3 +581,49 @@ TEST_CASE("predicates - string_ends_with case_insensitive", "")
     REQUIRE_THAT(pred("ab"), matchers::equal_to(false));
     REQUIRE_THAT(pred("XYZ"), matchers::equal_to(false));
 }
+
+TEST_CASE("predicates - string_contains case_sensitive", "")
+{
+    const auto pred = predicates::string_contains("ABC", predicates::string_comparison::case_sensitive);
+    REQUIRE_THAT(  //
+        core::str(pred),
+        matchers::equal_to("(string_contains case_sensitive \"ABC\")"sv));
+
+    REQUIRE_THAT(pred("ABC"), matchers::equal_to(true));
+    REQUIRE_THAT(pred("_ABC"), matchers::equal_to(true));
+    REQUIRE_THAT(pred("xyzABC"), matchers::equal_to(true));
+    REQUIRE_THAT(pred("xyzABCxyz"), matchers::equal_to(true));
+    REQUIRE_THAT(pred("xyzabcxyz"), matchers::equal_to(false));
+
+    REQUIRE_THAT(pred("AB"), matchers::equal_to(false));
+    REQUIRE_THAT(pred("XYZ"), matchers::equal_to(false));
+}
+
+TEST_CASE("predicates - string_contains case_insensitive", "")
+{
+    const auto pred = predicates::string_contains("ABC", predicates::string_comparison::case_insensitive);
+    REQUIRE_THAT(  //
+        core::str(pred),
+        matchers::equal_to("(string_contains case_insensitive \"ABC\")"sv));
+
+    REQUIRE_THAT(pred("ABC"), matchers::equal_to(true));
+    REQUIRE_THAT(pred("xABC"), matchers::equal_to(true));
+    REQUIRE_THAT(pred("xabc"), matchers::equal_to(true));
+    REQUIRE_THAT(pred("xyzAbc"), matchers::equal_to(true));
+
+    REQUIRE_THAT(pred("AB"), matchers::equal_to(false));
+    REQUIRE_THAT(pred("ab"), matchers::equal_to(false));
+    REQUIRE_THAT(pred("XYZ"), matchers::equal_to(false));
+}
+
+TEST_CASE("predicates - string_matches", "")
+{
+    const auto pred = predicates::string_matches(R"([A-Z]{3}\d)");
+
+    REQUIRE_THAT(pred("ABC5"), matchers::equal_to(true));
+    REQUIRE_THAT(pred("KLM8"), matchers::equal_to(true));
+
+    REQUIRE_THAT(pred("_ABC5_"), matchers::equal_to(false));
+    REQUIRE_THAT(pred("KL"), matchers::equal_to(false));
+    REQUIRE_THAT(pred("KLM88"), matchers::equal_to(false));
+}

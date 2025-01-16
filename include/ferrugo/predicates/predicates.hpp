@@ -7,6 +7,7 @@
 #include <ferrugo/core/types.hpp>
 #include <functional>
 #include <optional>
+#include <regex>
 #include <sstream>
 #include <variant>
 
@@ -1138,6 +1139,64 @@ struct string_ends_with_fn
     }
 };
 
+struct string_contains_fn
+{
+    struct impl
+    {
+        std::string m_expected;
+        string_comparison m_comparison;
+
+        bool operator()(std::string_view actual) const
+        {
+            return std::search(
+                       std::begin(actual),
+                       std::end(actual),
+                       std::begin(m_expected),
+                       std::end(m_expected),
+                       compare_characters(m_comparison))
+                   != std::end(actual);
+        }
+
+        friend std::ostream& operator<<(std::ostream& os, const impl& item)
+        {
+            return os << "(string_contains " << item.m_comparison << " \"" << item.m_expected << "\")";
+        }
+    };
+
+    auto operator()(std::string expected, string_comparison comparison) const
+    {
+        return impl{ std::move(expected), comparison };
+    }
+};
+
+struct string_matches_fn
+{
+    struct impl
+    {
+        std::regex m_regex;
+
+        bool operator()(std::string_view actual) const
+        {
+            return std::regex_match(actual.begin(), actual.end(), m_regex);
+        }
+
+        friend std::ostream& operator<<(std::ostream& os, const impl& item)
+        {
+            return os << "(string_matches)";
+        }
+    };
+
+    auto operator()(std::regex regex) const
+    {
+        return impl{ std::move(regex) };
+    }
+
+    auto operator()(const std::string& regex) const
+    {
+        return (*this)(std::regex(regex));
+    }
+};
+
 }  // namespace detail
 
 template <class T>
@@ -1201,6 +1260,8 @@ static constexpr inline auto contains_array = detail::contains_array_fn{};
 static constexpr inline auto string_is = detail::string_is_fn{};
 static constexpr inline auto string_starts_with = detail::string_starts_with_fn{};
 static constexpr inline auto string_ends_with = detail::string_ends_with_fn{};
+static constexpr inline auto string_contains = detail::string_contains_fn{};
+static constexpr inline auto string_matches = detail::string_matches_fn{};
 
 static constexpr inline auto eq = detail::compare_fn<std::equal_to<>, FERRUGO_STR_T("eq")>{};
 static constexpr inline auto ne = detail::compare_fn<std::not_equal_to<>, FERRUGO_STR_T("ne")>{};
